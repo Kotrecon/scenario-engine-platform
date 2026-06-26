@@ -62,12 +62,14 @@
 
 ```text
 1. AddCustomCors (DI)
-2. AddCustomHealthChecks (DI)
-3. AddCustomRateLimiting (DI)
-4. UseCors (middleware, в основном pipeline)
-5. UseRateLimiter (middleware, в основном pipeline)
-6. UseCustomHealthChecks (MapWhen по порту 8081)
-7. Основной API на порту 8080
+2. AddCustomCorrelationId (DI)
+3. AddCustomHealthChecks (DI)
+4. AddCustomRateLimiting (DI)
+5. UseCors (middleware, в основном pipeline)
+6. UseCustomCorrelationId (middleware, в основном pipeline)
+7. UseRateLimiter (middleware, в основном pipeline)
+8. UseCustomHealthChecks (MapWhen по порту 8081)
+9. Основной API на порту 8080
 ```
 
 ### Инфраструктура (Deployment)

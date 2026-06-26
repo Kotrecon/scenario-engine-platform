@@ -9,11 +9,13 @@
 ```csharp
 // 1. DI
 builder.Services.AddCustomCors();
+builder.Services.AddCustomCorrelationId();
 builder.Services.AddCustomExceptionHandler();
 
 // 2. Pipeline (ПЕРВЫМ middleware)
 app.UseCustomExceptionHandler();
 app.UseCors();
+app.UseCustomCorrelationId();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();

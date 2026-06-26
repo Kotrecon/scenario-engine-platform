@@ -37,6 +37,9 @@ backend/
 ├── Controllers/
 │   └── LoggingController.cs
 ├── Extensions/
+│   ├── CorrelationId/
+│   │   ├── CorrelationIdExtensions.cs
+│   │   └── CorrelationIdMiddleware.cs
 │   ├── Cors/
 │   │   └── CorsExtensions.cs
 │   ├── HealthChecks/
@@ -90,12 +93,14 @@ backend/
 5. builder.AddCustomAuthentication() — JWT Bearer
 6. builder.AddCustomAuthorization() — Policy-based
 7. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
-8. builder.Services.AddCustomHealthChecks() — health checks DI
-9. builder.Services.AddCustomRateLimiting() — rate limiter DI
-10. app.MapControllers() — MVC pipeline
-11. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
-12. app.UseRateLimiter() — rate limiter middleware
-13. app.UseCustomHealthChecks() — health endpoints на порту 8081
+8. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
+9. builder.Services.AddCustomHealthChecks() — health checks DI
+10. builder.Services.AddCustomRateLimiting() — rate limiter DI
+11. app.MapControllers() — MVC pipeline
+12. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
+13. app.UseCustomCorrelationId() — Correlation ID middleware
+14. app.UseRateLimiter() — rate limiter middleware
+15. app.UseCustomHealthChecks() — health endpoints на порту 8081
 ```
 
 ## Порты
@@ -251,3 +256,20 @@ backend/
 - Не безопасно для production (нужно ограничить origins)
 - Конфигурация в appsettings.json, политика в CorsExtensions.cs
 - TODO: см. architecture/TODO.md
+
+---
+
+### ADR-008: Correlation ID через Guid.CreateVersion7
+
+**Статус:** Принято
+
+**Контекст:** Нужно связывать логи и трейсы в рамках одного запроса для отладки и мониторинга.
+
+**Решение:** X-Correlation-Id генерируется через Guid.CreateVersion7 (.NET 10) или прокидывается из входящего заголовка. Добавляется в LogContext (Serilog) и Activity (OpenTelemetry).
+
+**Последствия:**
+
+- Time-ordered UUID (v7) — логи сортируются по времени
+- Совместим с OTel trace-id
+- Заголовок возвращается в ответе для клиента
+- Не работает на health-checks (отдельный порт 8081)

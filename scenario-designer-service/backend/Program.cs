@@ -1,4 +1,5 @@
 using ScenarioDesigner.Extensions;
+using ScenarioDesigner.Extensions.CorrelationId;
 using ScenarioDesigner.Extensions.Cors;
 using ScenarioDesigner.Extensions.HealthChecks;
 using ScenarioDesigner.Extensions.RateLimiting;
@@ -62,6 +63,13 @@ try
     builder.Services.AddCustomCors();
 
     // ------------------------------------------------------------------------
+    // 5.3 CORRELATION ID
+    // Генерирует X-Correlation-Id (Guid.CreateVersion7()) или прокидывает
+    // входящий. Добавляет в LogContext и Activity для трассировки.
+    // ------------------------------------------------------------------------
+    builder.Services.AddCustomCorrelationId();
+
+    // ------------------------------------------------------------------------
     // 5.2 HEALTH CHECKS
     // Регистрация health checks в DI.
     // Liveness: всегда Healthy (игнорирует shutdown).
@@ -84,6 +92,11 @@ try
     // 6.1 CORS — до всех остальных middleware
     // ------------------------------------------------------------------------
     app.UseCors();
+
+    // ------------------------------------------------------------------------
+    // 6.2 CORRELATION ID — после CORS, до Rate Limiter
+    // ------------------------------------------------------------------------
+    app.UseCustomCorrelationId();
 
     app.MapControllers();
 

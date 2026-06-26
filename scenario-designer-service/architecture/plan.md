@@ -5,7 +5,7 @@
 - [x] Health checks (подробнее: `architecture/operability .md`)
 - [ ] Global exception handler middleware
 - [ ] Request/Response logging middleware
-- [ ] Correlation ID middleware
+- [x] Correlation ID middleware
 - [x] CORS policy
 - [ ] API Versioning
 - [ ] Swagger/OpenAPI с JWT-авторизацией

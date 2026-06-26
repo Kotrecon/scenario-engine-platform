@@ -3,7 +3,7 @@
 Визуальный редактор сценариев оповещения для системы ситуационного управления (ЛСО).  
 Часть платформы **Scenario Engine Platform** для критической инфраструктуры.
 
-**GitHub:** https://github.com/Kotrecon/scenario-engine-platform
+**GitHub:** `https://github.com/Kotrecon/scenario-engine-platform`
 
 ## Архитектура
 
@@ -52,16 +52,27 @@ backend/
 │   └── Dto/
 │       └── Request/
 │           └── Logging/
-│               └── SetLogLevelRequest.cs
+│               ├── SetLogLevelRequest.cs
+│               └── SetLogLevelValidator.cs
 ├── Controllers/
 │   └── LoggingController.cs
 ├── Extensions/
+│   ├── CorrelationId/
+│   │   ├── CorrelationIdExtensions.cs
+│   │   └── CorrelationIdMiddleware.cs
+│   ├── Cors/
+│   │   └── CorsExtensions.cs
+│   ├── RequestResponseLogging/
+│   │   ├── RequestResponseLoggingExtensions.cs
+│   │   └── RequestResponseLoggingMiddleware.cs
 │   ├── HealthChecks/
 │   │   └── HealthCheckExtensions.cs
 │   ├── RateLimiting/
 │   │   └── RateLimitingExtensions.cs
 │   └── ServiceExtensions.cs
 ├── HealthChecks/
+│   ├── IDatabaseHealthChecker.cs
+│   ├── DatabaseHealthChecker.cs
 │   ├── MinimalResponseWriter.cs
 │   └── ReadinessHealthCheck.cs
 ├── Security/
@@ -72,6 +83,7 @@ backend/
 │       └── ConfigurationValidator.cs
 ├── Program.cs
 ├── ScenarioDesigner.csproj
+├── ScenarioDesigner.Tests.csproj
 ├── appsettings.json
 └── appsettings.Development.json
 ```
@@ -143,15 +155,18 @@ backend/
 | OpenTelemetryOptions           | 13     | 100%      |
 | SetLogLevelRequest + Validator | 8      | 100%      |
 | LoggingController              | 16     | 100%      |
-| AuthenticationExtensions       | 12     | 19.5%     |
+| AuthenticationExtensions       | 12     | 100%      |
 | AuthorizationExtensions        | 6      | 100%      |
-| **Итого**                      | **92** | **44.5%** |
+| CorsExtensions                 | 3      | 100%      |
+| CorrelationIdMiddleware        | 4      | 84%       |
+| RequestResponseLogging         | 2      | 100%      |
+| **Итого**                      | **101**| **51.1%** |
 
 - Фреймворк: TUnit 1.56.35
 - Моки: Moq 4.20.72
 - Покрытие: Microsoft.Testing.Extensions.CodeCoverage 18.8.0
 - HTML отчёт: `coveragereport/index.html`
-- Запуск: `dotnet run --project "backend/ScenarioDesigner.Tests/ScenarioDesigner.Tests.csproj"`
+- Запуск: `dotnet test --project "backend/ScenarioDesigner.Tests/ScenarioDesigner.Tests.csproj"`
 
 ## Стандарты
 

@@ -1,17 +1,31 @@
 # План разработки Scenario Designer Service
 
+> Дорожная карта проекта с разбивкой на фазы.
+>
+> Связанные документы:
+>
+> - [`operability.md`](./operability.md) — Health Checks, Graceful Shutdown, Rate Limiting, CORS, Exception Handler
+> - [`observability.md`](./observability.md) — Логирование, Correlation ID, OpenTelemetry
+> - [`result-pattern.md`](./result-pattern.md) — Result Pattern библиотека
+> - [`api.md`](./api.md) — HTTP-контракты
+
+---
+
 ## Фаза 0: Backend Infrastructure
 
-- [x] Health checks (подробнее: `architecture/operability .md`)
+- [x] Health checks (подробнее: [`operability.md`](./operability.md))
 - [x] Global exception handler middleware
 - [x] Request/Response logging middleware
 - [x] Correlation ID middleware
 - [x] CORS policy
-- [ ] API Versioning (observability)
-- [ ] Swagger/OpenAPI с JWT-авторизацией (observability)
-- [ ] ProblemDetails layer (внедрение + рефакторинг кода) (observability)
+- [x] Result Pattern библиотека (47 тестов, подробнее: [`result-pattern.md`](./result-pattern.md))
+- [x] ProblemDetails layer (RFC 7807) — интеграция с Result Pattern
+- [ ] API Versioning
+- [ ] Swagger/OpenAPI с JWT-авторизацией
 - [ ] Persistence layer: DbContext, entity configs, migrations, transaction boundary (operability)
 - [ ] Messaging layer: publisher/consumer contracts, retry, idempotency, outbox skeleton (operability)
+
+---
 
 ## Фаза 1: UI Kit — адаптация
 
@@ -19,6 +33,8 @@
 - [ ] Цветовая схема под EEMUA 191
 - [ ] Тёмная тема (#0a0c10 bg, #111318 panel)
 - [ ] Базовые компоненты: кнопки, инпуты, таблицы, модалки
+
+---
 
 ## Фаза 2: Domain Layer
 
@@ -29,6 +45,8 @@
 - [ ] Связь M:N `ScenarioTrigger` + валидатор + unit-тесты
 - [ ] UI: базовые карточки для отображения сущностей
 
+---
+
 ## Фаза 3: Data & Storage
 
 - [ ] Database (EF Core) + migrations
@@ -37,12 +55,16 @@
 - [ ] Extended health check: БД
 - [ ] UI: список сценариев, список триггеров
 
+---
+
 ## Фаза 4: Application Services
 
 - [ ] `IScenarioService` — CRUD + lifecycle + тесты
 - [ ] `ITriggerService` — CRUD + валидация + тесты
 - [ ] `IScenarioActionService` — CRUD + тесты
 - [ ] State machine для связей (подготовка к n8n-style)
+
+---
 
 ## Фаза 5: API Layer
 
@@ -55,6 +77,8 @@
 - [ ] UI: страница входа/регистрации
 - [ ] UI: админ-дашборд (метрики, KPI, список пользователей)
 
+---
+
 ## Фаза 6: UI Editor (n8n-style оформление)
 
 - [ ] Визуальный редактор сценариев в стиле n8n (только оформление)
@@ -62,16 +86,20 @@
 - [ ] Валидация в реальном времени
 - [ ] Contract-тесты API (Pact)
 
+---
+
 ## Фаза 7: Resilience & Security
 
 - [ ] Circuit breaker (Polly)
 - [ ] Retry policies (Polly)
 - [ ] Timeout policies
-- [ ] Rate limiting
+- [ ] Rate limiting (расширение на API-эндпоинты)
 - [ ] Secret management
 - [ ] Audit logging
 - [ ] Data encryption
 - [ ] Load tests (k6)
+
+---
 
 ## Фаза 8: Messaging & Events
 
@@ -80,10 +108,14 @@
 - [ ] Event-driven architecture
 - [ ] Outbox pattern
 
+---
+
 ## Фаза 9: Background Jobs
 
 - [ ] Scheduled tasks
 - [ ] Background workers
+
+---
 
 ## Фаза 10: Observability
 
@@ -93,10 +125,14 @@
 - [ ] Log aggregation (ELK / Loki)
 - [ ] Alerting (Prometheus Alertmanager)
 
+---
+
 ## Фаза 11: Integration (когда появятся сервисы)
 
 - [ ] Контракты для Scenario Registry
 - [ ] Контракты для Scenario Engine
+
+---
 
 ## Фаза 12: UI Polish
 
@@ -105,12 +141,16 @@
 - [ ] Экспорт/импорт сценариев в JSON
 - [ ] Подготовка к графовой БД
 
+---
+
 ## Фаза 13: Documentation
 
-- [ ] README.md
-- [ ] API documentation
-- [ ] Architecture decision records (ADR)
+- [ ] README.md (актуализация)
+- [ ] API documentation (Swagger/OpenAPI)
+- [ ] Architecture decision records (ADR) — см. [`adr.md`](./adr.md)
 - [ ] Runbooks
+
+---
 
 ## Ключевые принципы
 
@@ -120,3 +160,4 @@
 4. **n8n-style — только визуальное оформление**, не функциональность графов
 5. **Контракты с другими сервисами — когда они появятся** (Фаза 11)
 6. **Docker и CI/CD — когда понадобятся**, не сейчас
+7. **Result Pattern для всех бизнес-операций**: типобезопасная обработка ошибок без исключений (см. [`result-pattern.md`](./result-pattern.md))

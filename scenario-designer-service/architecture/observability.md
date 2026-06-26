@@ -106,6 +106,43 @@ Middleware генерирует уникальный идентификатор 
 
 ---
 
+## Логирование бизнес-ошибок (Result Pattern)
+
+### Концепция
+
+При использовании Result Pattern бизнес-ошибки логируются как структурированные данные через Serilog `LogContext`. Каждая ошибка обогащает лог тремя полями:
+
+- `ErrorCode` — машинно-читаемый код (для фильтрации и алертов)
+- `ErrorMessage` — человекочитаемое описание
+- `StatusCode` — HTTP-статус для категоризации
+
+### Формат лога ошибки
+
+```bash
+[Warning] [CorrelationId: 01923abc-...] [ErrorCode: ValidationFailed]
+[StatusCode: 422] Operation failed: Данные не прошли валидацию
+```
+
+### Интеграция с Serilog
+
+```csharp
+using (LogContext.PushProperty("CorrelationId", correlationId))
+using (LogContext.PushProperty("ErrorCode", error.Code))
+using (LogContext.PushProperty("StatusCode", error.StatusCode))
+{
+    _logger.Warning("Operation failed: {ErrorMessage} ({StatusCode})",
+        error.Message, error.StatusCode);
+}
+```
+
+### Связь с ProblemDetails
+
+Формат ProblemDetails (RFC 7807) используется как **единый стандарт** для HTTP-ответов И логов ошибок — клиенты и мониторинг говорят на одном языке.
+
+Детали реализации Result Pattern — в [`result-pattern.md`](./result-pattern.md).
+
+---
+
 ## Телеметрия (OpenTelemetry)
 
 | Параметр         | Production                                  | Development                                 |

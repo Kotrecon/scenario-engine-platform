@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using ScenarioDesigner.Controllers;
 using ScenarioDesigner.Contracts.Dto.Request.Logging;
+using ScenarioDesigner.Contracts.Result.Common;
 using Serilog.Core;
 using Serilog.Events;
 using System.Security.Claims;
@@ -42,10 +43,6 @@ public class LoggingControllerTests
         return controller;
     }
 
-    // ------------------------------------------------------------------------
-    // GET /api/logging/level
-    // ------------------------------------------------------------------------
-
     [Test]
     public async Task GetLevel_ReturnsRootAndOverrides()
     {
@@ -65,10 +62,6 @@ public class LoggingControllerTests
         await Assert.That(overrides!["Microsoft"]).IsEqualTo("Warning");
     }
 
-    // ------------------------------------------------------------------------
-    // PUT /api/logging/level — root level
-    // ------------------------------------------------------------------------
-
     [Test]
     public async Task SetLevel_WithValidLevel_ReturnsOk()
     {
@@ -77,7 +70,7 @@ public class LoggingControllerTests
 
         var result = controller.SetLevel(request);
 
-        var okResult = result as OkObjectResult;
+        var okResult = result as OkResult;
         await Assert.That(okResult).IsNotNull();
         await Assert.That(_rootSwitch.MinimumLevel).IsEqualTo(LogEventLevel.Warning);
     }
@@ -186,10 +179,6 @@ public class LoggingControllerTests
             Times.Once);
     }
 
-    // ------------------------------------------------------------------------
-    // PUT /api/logging/level — category override
-    // ------------------------------------------------------------------------
-
     [Test]
     public async Task SetLevel_WithCategory_UpdatesOverride()
     {
@@ -198,7 +187,7 @@ public class LoggingControllerTests
 
         var result = controller.SetLevel(request);
 
-        var okResult = result as OkObjectResult;
+        var okResult = result as OkResult;
         await Assert.That(okResult).IsNotNull();
         await Assert.That(_overrideSwitches["Microsoft"].MinimumLevel).IsEqualTo(LogEventLevel.Error);
     }
@@ -252,80 +241,82 @@ public class LoggingControllerTests
 
         var result = controller.SetLevel(request);
 
-        var notFoundResult = result as NotFoundObjectResult;
-        await Assert.That(notFoundResult).IsNotNull();
+        var objectResult = result as ObjectResult;
+        await Assert.That(objectResult).IsNotNull();
+        await Assert.That(objectResult!.StatusCode).IsEqualTo(404);
 
-        var error = notFoundResult!.Value!.GetType().GetProperty("error")!.GetValue(notFoundResult.Value)!.ToString();
-        await Assert.That(error).Contains("Unknown");
+        var problem = objectResult.Value as ProblemDetails;
+        await Assert.That(problem).IsNotNull();
+        await Assert.That(problem!.Title).IsEqualTo("NotFound");
     }
 
-    // ------------------------------------------------------------------------
-    // PUT /api/logging/level — errors
-    // ------------------------------------------------------------------------
-
     [Test]
-    public async Task SetLevel_WithInvalidLevel_ReturnsBadRequest()
+    public async Task SetLevel_WithInvalidLevel_ReturnsValidationFailed()
     {
         var controller = CreateController();
         var request = new SetLogLevelRequest(Category: null, Level: "Critical");
 
         var result = controller.SetLevel(request);
 
-        var badRequestResult = result as BadRequestObjectResult;
-        await Assert.That(badRequestResult).IsNotNull();
+        var objectResult = result as ObjectResult;
+        await Assert.That(objectResult).IsNotNull();
+        await Assert.That(objectResult!.StatusCode).IsEqualTo(422);
 
-        var error = badRequestResult!.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value)!.ToString();
-        await Assert.That(error).Contains("Invalid level");
+        var problem = objectResult.Value as ProblemDetails;
+        await Assert.That(problem).IsNotNull();
+        await Assert.That(problem!.Title).IsEqualTo("ValidationFailed");
     }
 
     [Test]
-    public async Task SetLevel_WithNullLevel_ReturnsBadRequest()
+    public async Task SetLevel_WithNullLevel_ReturnsValidationFailed()
     {
         var controller = CreateController();
         var request = new SetLogLevelRequest(Category: null, Level: null!);
 
         var result = controller.SetLevel(request);
 
-        var badRequestResult = result as BadRequestObjectResult;
-        await Assert.That(badRequestResult).IsNotNull();
+        var objectResult = result as ObjectResult;
+        await Assert.That(objectResult).IsNotNull();
+        await Assert.That(objectResult!.StatusCode).IsEqualTo(422);
 
-        var error = badRequestResult!.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value)!.ToString();
-        await Assert.That(error).Contains("Level is required");
+        var problem = objectResult.Value as ProblemDetails;
+        await Assert.That(problem).IsNotNull();
+        await Assert.That(problem!.Title).IsEqualTo("ValidationFailed");
     }
 
     [Test]
-    public async Task SetLevel_WithEmptyCategory_ReturnsBadRequest()
+    public async Task SetLevel_WithEmptyCategory_ReturnsValidationFailed()
     {
         var controller = CreateController();
         var request = new SetLogLevelRequest(Category: "", Level: "Debug");
 
         var result = controller.SetLevel(request);
 
-        var badRequestResult = result as BadRequestObjectResult;
-        await Assert.That(badRequestResult).IsNotNull();
+        var objectResult = result as ObjectResult;
+        await Assert.That(objectResult).IsNotNull();
+        await Assert.That(objectResult!.StatusCode).IsEqualTo(422);
 
-        var error = badRequestResult!.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value)!.ToString();
-        await Assert.That(error).IsEqualTo("Category cannot be empty string.");
+        var problem = objectResult.Value as ProblemDetails;
+        await Assert.That(problem).IsNotNull();
+        await Assert.That(problem!.Title).IsEqualTo("ValidationFailed");
     }
 
     [Test]
-    public async Task SetLevel_ForbiddenLevel_ReturnsBadRequest()
+    public async Task SetLevel_ForbiddenLevel_ReturnsBusinessRuleViolation()
     {
         var controller = CreateController();
         var request = new SetLogLevelRequest(Category: null, Level: "Fatal");
 
         var result = controller.SetLevel(request);
 
-        var badRequestResult = result as BadRequestObjectResult;
-        await Assert.That(badRequestResult).IsNotNull();
+        var objectResult = result as ObjectResult;
+        await Assert.That(objectResult).IsNotNull();
+        await Assert.That(objectResult!.StatusCode).IsEqualTo(400);
 
-        var error = badRequestResult!.Value!.GetType().GetProperty("error")!.GetValue(badRequestResult.Value)!.ToString();
-        await Assert.That(error).Contains("forbidden");
+        var problem = objectResult.Value as ProblemDetails;
+        await Assert.That(problem).IsNotNull();
+        await Assert.That(problem!.Title).IsEqualTo("BusinessRuleViolation");
     }
-
-    // ------------------------------------------------------------------------
-    // GET /api/logging/categories
-    // ------------------------------------------------------------------------
 
     [Test]
     public async Task GetCategories_ReturnsConfiguredCategories()

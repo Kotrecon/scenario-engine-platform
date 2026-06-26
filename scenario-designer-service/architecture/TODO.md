@@ -69,7 +69,6 @@
 ### Telemetry
 
 - [ ] Swagger/OpenAPI с JWT-авторизацией
-- [ ] ProblemDetails layer (стандартный формат ошибок RFC 7807)
 
 ---
 
@@ -82,3 +81,50 @@
 - [ ] Решить вопрос с `Access-Control-Allow-Credentials`
 - [ ] Определить разрешённые заголовки
 - [ ] Настроить `Access-Control-Max-Age` для кэширования preflight
+
+---
+
+## API
+
+- [ ] API Versioning
+
+---
+
+## Result Pattern Library
+
+> Подробности реализации: [`result-pattern.md`](./result-pattern.md)
+
+### Фаза 1: Асинхронная валидация (приоритет: средний)
+
+- [ ] `IAsyncRule<T>` — интерфейс: `Task<bool> IsSatisfiedAsync(T value)`
+- [ ] `AsyncValidator<T>` — принимает список `IAsyncRule<T>`, возвращает `Result`
+- [ ] Интеграция с EF Core — правило `UniqueRule<T>` для проверки уникальности
+- [ ] Тесты: Mock-БД, проверка async-цепочки
+
+### Фаза 2: Локализация (приоритет: низкий)
+
+- [ ] `ILocalizableError` — интерфейс: `string MessageKey { get; }` вместо `Message`
+- [ ] `LocalizedString` — обёртка над `IStringLocalizer` для резолва ключей
+- [ ] Обратная совместимость — существующие ошибки реализуют оба интерфейса
+
+### Фаза 3: Расширенные типы ошибок
+
+- [ ] `RateLimitError` — HTTP 429 + `Retry-After` заголовок
+- [ ] `TimeoutError` — HTTP 504 для долгих операций
+- [ ] `UnauthorizedError` — HTTP 401 (отличие от `ForbiddenError` 403)
+
+### Фаза 4: NuGet-пакет
+
+- [ ] `.csproj` с метаданными — Version, Authors, Description, PackageTags
+- [ ] strong-naming — поддержка signed assemblies
+- [ ] SourceLink — отладка через NuGet
+- [ ] Публикация — nuget.org или приватный feed
+
+---
+
+## Связанные документы
+
+- [`operability.md`](./operability.md)
+- [`observability.md`](./observability.md)
+- [`result-pattern.md`](./result-pattern.md)
+- [`api.md`](./api.md)

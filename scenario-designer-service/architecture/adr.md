@@ -133,3 +133,179 @@
 - Не работает на health-checks (отдельный порт 8081)
 
 ---
+
+## ADR-009: Result Pattern для бизнес-ошибок
+
+**Статус:** Принято
+
+**Контекст:** Проект — критическая инфраструктура (ЛСО) с жёсткими стандартами (ISA-18.2, IEC 62443). Требуется типобезопасная обработка ошибок без исключений для управления потоком. Exception Handler уже маппит необработанные исключения в JSON, но бизнес-ошибки (валидация, не найдено, конфликт, нарушение правила) нуждаются в отдельном, предсказуемом механизме.
+
+**Рассмотренные альтернативы:**
+
+1. **Только Exception Handler** — исключения для бизнес-ошибок. Минус: исключения дороги (стеко-трейс, аллокации), компилятор не контролирует обработку, тесты парсят текст сообщения.
+2. **FluentResults** — сторонняя библиотека. Минус: внешняя зависимость, не контролируемый API, может конфликтовать с нашими расширениями.
+3. **Собственная библиотека Result** — 9 файлов, без зависимостей, полный контроль над контрактом.
+
+**Решение:** Собственная библиотека `Result` в `Contracts/Result/` с интеграцией в ASP.NET Core через `ResultExtensions.ToActionResult()`.
+
+**Обоснование:**
+
+- Критическая инфраструктура требует явных контрактов: компилятор заставляет обработать каждый тип ошибки
+- RFC 7807 ProblemDetails — стандартный формат для API, совместимый с Swagger/OpenAPI
+- 5 типов ошибок покрывают 90% REST-сценариев: ValidationError (422), NotFoundError (404), ConflictError (409), ForbiddenError (403), BusinessRuleError (400)
+- ValidationError с парсингом "field:code" → готовый протокол для фронтенда
+- Нет зависимостей от MediatR, FluentValidation и других библиотек
+
+**Последствия:**
+
+- Бизнес-ошибки — часть доменной модели, а не аварийные ситуации
+- Контроллеры: `return result.ToActionResult()` вместо ручных `BadRequest`/`NotFound`
+- Тестируемость: проверяем `error is NotFoundError`, а не парсим текст
+- Exception Handler остаётся для непредвиденных технических сбоев (500, timeout)
+- Конфликт namespace `ScenarioDesigner.Contracts.Result` решается через fully qualified names
+
+**Связанные документы:**
+
+- [`result-pattern.md`](./result-pattern.md) — документация библиотеки
+- [`observability.md`](./observability.md) — формат ответов (ProblemDetails)
+- [`testing.md`](./testing.md) — 47 тестов, покрытие 100%
+
+---
+
+## ADR-010: OpenTelemetry для телеметрии
+
+**Статус:** Принято
+
+**Контекст:** Критическая инфраструктура (ЛСО) требует полной observability: логи, трейсы, метрики. Нужен единый стек для сбора телеметрии, совместимый с промышленными системами мониторинга (Grafana, Prometheus, Jaeger).
+
+**Рассмотренные альтернативы:**
+
+1. **App Metrics** — старая библиотека, слабая поддержка, нет unified traces/metrics/logs.
+2. **Prometheus .NET** — только метрики, нет трейсов и логов.
+3. **OpenTelemetry** — стандарт CNCF, единый SDK для traces, metrics, logs, экспорт в OTLP.
+
+**Решение:** OpenTelemetry.Extensions.Hosting с экспортом в OTLP (gRPC). Три сигнала: logs (OTLP), traces (OTLP + HttpClient instrumentation), metrics (OTLP + Runtime + HttpClient instrumentation). Конфигурация через appsettings.json, endpoint не меняется на лету (GitOps + restart).
+
+**Обоснование:**
+
+- CNCF стандарт — совместим с Grafana, Prometheus, Jaeger, Zipkin, Datadog
+- Единый SDK для всех трёх сигналов (traces, metrics, logs)
+- HttpClient instrumentation автоматически коррелирует outgoing запросы
+- Runtime instrumentation даёт .NET метрики (GC, CPU,ThreadPool) из коробки
+- OTLP протокол — стандарт для OpenTelemetry Collector
+
+**Последствия:**
+
+- Точка сбора: OTel Collector (отдельный контейнер/сервис)
+- Логи дублируются: Serilog (application) + OTel (infra) — это осознанно
+- Фильтры OTel-логов: Microsoft/System → Warning (уменьшает шум)
+- Console exporter отключен даже в development ( Serilog покрывает)
+- Корреляция с Correlation ID через Activity.Current
+
+**Связанные документы:**
+
+- [`observability.md`](./observability.md) — настройки OTel, фильтры, endpoint
+
+---
+
+## ADR-011: Global Exception Handler Middleware
+
+**Статус:** Принято
+
+**Контекст:** Необработанные исключения в pipeline могут раскрыть внутренние детали (stack trace, IP, названия сервисов) клиенту и вызвать 500 без структурированного ответа. Нужен единый точка перехвата для безопасного формирования ошибок.
+
+**Рассмотренные альтернативы:**
+
+1. **try/catch в каждом контроллере** — дублирование кода, легко забыть, нет единообразия.
+2. **IExceptionHandler** (.NET 8+) — новое API, но менее гибкое для нашего pipeline.
+3. **Custom ExceptionHandlerMiddleware** — полный контроль над порядком middleware, маппингом, форматом.
+
+**Решение:** `ExceptionHandlerMiddleware` — первый middleware в pipeline. Перехватывает все необработанные исключения, маппит на HTTP-коды и безопасный JSON `{"error": {"code": 400, "message": "..."}}`.
+
+**Маппинг:**
+
+| Исключение | HTTP-код | Сообщение |
+|------------|----------|-----------|
+| ArgumentException | 400 | Invalid request |
+| KeyNotFoundException | 404 | Resource not found |
+| UnauthorizedAccessException | 403 | Access denied |
+| TimeoutException | 504 | Request timed out |
+| Любое другое | 500 | An unexpected error occurred |
+
+**Обоснование:**
+
+- Безопасность: stack trace, IP, пути файлов НЕ утекают наружу
+- Единообразие: все ошибки в одном формате JSON
+- Аудит: полная информация логируется на сервере через `LogError`
+- Первый в pipeline: перехватывает исключения от всех последующих middleware
+
+**Последствия:**
+
+- Не перехватывает `/health/*` (отдельный pipeline на порту 8081)
+- Не перехватывает `OperationCanceledException` (graceful shutdown)
+- Сочетается с Result Pattern: бизнес-ошибки → Result, технические → Exception Handler
+
+**Связанные документы:**
+
+- [`operability.md`](./operability .md) — раздел Exception Handler
+
+---
+
+## ADR-012: Request/Response Logging Middleware
+
+**Статус:** Принято
+
+**Контекст:** Нужно логировать HTTP-запросы для отладки, аудита и мониторинга производительности. Тела запросов/ответов могут содержать чувствительные данные (пароли, токены), поэтому логируются только метаданные.
+
+**Решение:** `RequestResponseLoggingMiddleware` логирует method, path, queryString, status code, duration. Не логирует тела request/response. Уровень логирования зависит от статуса: 2xx/3xx → Information, 4xx/5xx → Warning.
+
+**Обоснование:**
+
+- Минимальный оверхед: метаданные, не тела
+- Безопасность: пароли, токены не попадают в логи
+- Аудит: кто, когда, какой endpoint, какой статус
+- Производительность: duration в миллисекундах для поиска медленных запросов
+
+**Последствия:**
+
+- Не логирует `/health/*` (отдельный pipeline)
+- Формат: `HTTP GET /api/scenarios?page=1 → 200 (45ms)`
+- Correlation ID добавляется автоматически через LogContext
+
+**Связанные документы:**
+
+- [`observability.md`](./observability.md) — раздел Request/Response Logging
+
+---
+
+## ADR-013: TUnit как тестовый фреймворк
+
+**Статус:** Принято
+
+**Контекст:** Нужен тестовый фреймворк для unit-тестов с поддержкой .NET 10, async/await, modern синтаксиса и интеграцией с покрытием кода.
+
+**Рассмотренные альтернативы:**
+
+1. **xUnit** — самый популярный, но синтаксис более шумный (Theory, InlineData, Assert.*).
+2. **NUnit** — классический, но устаревающий API ([Test], Assert.That без await).
+3. **TUnit** — современный фреймворк, атрибуты как методы, нативный async/await, встроенный coverage.
+
+**Решение:** TUnit 1.56.35 с Moq 4.20.72 для мокирования и Microsoft.Testing.Extensions.CodeCoverage 18.8.0 для покрытия.
+
+**Обоснование:**
+
+- Синтаксис: `[Test] public async Task Name()` — минимальный шум
+- Assert: `await Assert.That(value).IsEqualTo(expected)` — нативный async
+- Скорость: быстрее xUnit/NUnit на больших тестовых suite
+- .NET 10: полная поддержка последнего runtime
+- Coverage: встроенный收集 через `--coverage` параметр
+
+**Последствия:**
+
+- 154 теста, покрытие 61.3% (line), 74.7% (branch)
+- HTML-отчёт через ReportGenerator
+- Отдельный test runner (не `dotnet test --filter`, а `--treenode-filter`)
+
+**Связанные документы:**
+
+- [`testing.md`](./testing.md) — полный список тестов,覆盖率

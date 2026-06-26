@@ -33,8 +33,11 @@ try
     // ILogger работает через Serilog (настроен выше).
     // ------------------------------------------------------------------------
     var logger = new SerilogLoggerFactory(Log.Logger).CreateLogger<Program>();
-    if (!ConfigurationValidator.ValidateRequiredConfiguration(builder.Configuration, logger))
+    var configResult = ConfigurationValidator.ValidateRequiredConfiguration(builder.Configuration, logger);
+    if (!configResult.IsSuccess)
     {
+        foreach (var error in configResult.Errors)
+            logger.LogError("Configuration validation failed: {Error}", error.Message);
         Environment.Exit(1);
     }
 

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScenarioDesigner.Contracts.Dto.Request.Logging;
+using ScenarioDesigner.Contracts.Result.Common;
+using ScenarioDesigner.Contracts.Result.Web;
 using Serilog.Core;
 using Serilog.Events;
 
@@ -68,44 +70,34 @@ public class LoggingController : ControllerBase
     [HttpPut("level")]
     public IActionResult SetLevel([FromBody] SetLogLevelRequest request)
     {
-        // --------------------------------------------------------------------
-        // Валидация через SetLogLevelValidator
-        // --------------------------------------------------------------------
-        var validationError = SetLogLevelValidator.Validate(request);
-        if (validationError != null)
-            return BadRequest(new { error = validationError.ErrorMessage });
+        var validationResult = SetLogLevelValidator.Validate(request);
+        if (!validationResult.IsSuccess)
+            return validationResult.ToActionResult();
 
-        // --------------------------------------------------------------------
-        // Проверка запрещённых уровней (безопасность)
-        // Валидатор уже проверил что Level валиден и входит в ValidLevels.
-        // --------------------------------------------------------------------
         var level = Enum.Parse<LogEventLevel>(request.Level, true);
 
         if (ForbiddenLevels.Contains(level))
-            return BadRequest(new { error = $"Level {level} is forbidden" });
+            return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new BusinessRuleError($"Level {level} is forbidden"))
+                .ToActionResult();
 
-        // --------------------------------------------------------------------
-        // Изменение уровня
-        // --------------------------------------------------------------------
         if (string.IsNullOrWhiteSpace(request.Category))
         {
-            // Root level
             _rootSwitch.MinimumLevel = level;
             _logger.LogWarning("Root log level changed to {Level} by {User}",
                 level, User.Identity?.Name ?? "Unknown");
         }
         else
         {
-            // Override для конкретной категории
             if (!_overrideSwitches.TryGetValue(request.Category, out var sw))
-                return NotFound(new { error = $"Category {request.Category} not found" });
+                return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new NotFoundError("Category", request.Category))
+                    .ToActionResult();
 
             sw.MinimumLevel = level;
             _logger.LogWarning("Log level for {Category} changed to {Level} by {User}",
                 request.Category, level, User.Identity?.Name ?? "Unknown");
         }
 
-        return Ok(new { message = "Log level updated" });
+        return ScenarioDesigner.Contracts.Result.Common.Result.Success().ToActionResult();
     }
 
     // ------------------------------------------------------------------------
@@ -120,5 +112,3 @@ public class LoggingController : ControllerBase
         return Ok(_overrideSwitches.Keys);
     }
 }
-
-

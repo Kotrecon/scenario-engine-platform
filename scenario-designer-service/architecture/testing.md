@@ -76,6 +76,64 @@
 - LogLevel с значениями → валидация проходит
 - Default values корректны
 
+#### **Result** — void-аналог (10)
+
+- Success → IsSuccess=true, Errors пуст
+- Failure с одной ошибкой → IsSuccess=false, одна ошибка
+- Failure с несколькими ошибками → IsSuccess=false, все ошибки
+- Failure без ошибок → InvalidOperationException
+- OnSuccess при успехе → вызывается action
+- OnSuccess при неудаче → action НЕ вызывается
+- OnFailure при неудаче → вызывается action с ошибками
+- OnFailure при успехе → action НЕ вызывается
+- ToResult при успехе → Result<T>.Success
+- ToResult при неудаче → Result<T>.Failure
+
+#### **Result<T>** — обобщённый результат (14)
+
+- Success → IsSuccess=true, Value, Errors пуст
+- Failure с одной ошибкой → IsSuccess=false, default(T), одна ошибка
+- Failure с несколькими ошибками → IsSuccess=false, default(T), все ошибки
+- Failure без ошибок → InvalidOperationException
+- OnSuccess при успехе → вызывается action со значением
+- OnSuccess при неудаче → action НЕ вызывается
+- OnFailure при неудаче → вызывается action с ошибками
+- OnFailure при успехе → action НЕ вызывается
+- Map при успехе → трансформирует значение
+- Map при неудаче → прокидывает ошибки
+- Bind при успехе → вызывает следующую операцию
+- Bind при неудаче → прокидывает ошибки
+- ToResult при успехе → non-generic Result.Success
+- ToResult при неудаче → non-generic Result.Failure
+
+#### **Ошибки** — свойства и парсинг (10)
+
+- BusinessRuleError → Message, Code="BusinessRuleViolation", StatusCode=400
+- ConflictError → Message, Code="Conflict", StatusCode=409
+- ForbiddenError → Message="Доступ запрещён.", Code="Forbidden", StatusCode=403
+- NotFoundError → EntityName, Code="NotFound", StatusCode=404
+- ValidationError → Message, Code="ValidationFailed", StatusCode=422
+- ValidationError парсит одну ошибку поля
+- ValidationError парсит несколько ошибок одного поля
+- ValidationError парсит несколько полей
+- ValidationError использует "invalid" когда код отсутствует
+- ValidationError обрабатывает null/пустой вход
+
+#### **ResultExtensions** — маппинг в ProblemDetails (13)
+
+- Generic Success → OkObjectResult
+- Non-generic Success → OkResult
+- Generic Failure → ObjectResult (404)
+- Non-generic Failure → ObjectResult (400)
+- ProblemDetails.Status/Title/Detail из первой ошибки
+- Extensions["errors"] содержит все ошибки
+- Extensions["validationErrors"] только для ValidationError
+- НЕ содержит validationErrors для не-валидационных ошибок
+- ProblemDetails содержит Status, Title, Detail
+- Errors содержат code и message
+- ValidationErrors структурированы по полям
+- НЕ раскрывает внутренние данные (StackTrace, InnerException)
+
 ---
 
 ### API
@@ -215,9 +273,9 @@
 
 ## Итого
 
-**Юнит-тесты:** 108 тестов  
-**Покрытие:** 51.5% (line), 63% (branch)  
-**Классы на 100%:** 11 из 14
+**Юнит-тесты:** 154 тестов  
+**Покрытие:** 61.3% (line), 74.7% (branch)  
+**Классы на 100%:** 18 из 32
 
 | Класс                            | Тестов | Покрытие                   |
 | -------------------------------- | ------ | -------------------------- |
@@ -236,6 +294,10 @@
 | RequestResponseLoggingExtensions | —      | 0% (пустой метод)          |
 | ExceptionHandlerMiddleware       | 7      | 100%                       |
 | ExceptionHandlerExtensions       | —      | 0% (пустой метод)          |
+| Result                           | 10     | 100%                       |
+| Result<T>                        | 14     | 100%                       |
+| ValidationError                  | 5      | 100%                       |
+| ResultExtensions                 | 13     | 100%                       |
 
 ---
 

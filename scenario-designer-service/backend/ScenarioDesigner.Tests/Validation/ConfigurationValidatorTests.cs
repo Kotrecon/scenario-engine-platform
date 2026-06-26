@@ -15,7 +15,7 @@ public class ConfigurationValidatorTests
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenValid_ReturnsTrue()
+    public async Task ValidateRequiredConfiguration_WhenValid_ReturnsSuccess()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -29,11 +29,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsTrue();
+        await Assert.That(result.IsSuccess).IsTrue();
+        await Assert.That(result.Errors).IsEmpty();
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenMissingServiceName_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenMissingServiceName_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -47,11 +48,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("ServiceName");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenMissingPort_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenMissingPort_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -65,11 +67,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Port");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenPortIsZero_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenPortIsZero_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -83,11 +86,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Port");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenPortIsMax_ReturnsTrue()
+    public async Task ValidateRequiredConfiguration_WhenPortIsMax_ReturnsSuccess()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -101,11 +105,11 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsTrue();
+        await Assert.That(result.IsSuccess).IsTrue();
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenPortOutOfRange_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenPortOutOfRange_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -119,11 +123,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Port");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenPortNegative_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenPortNegative_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -137,11 +142,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Port");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenPortNotNumber_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenPortNotNumber_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -155,11 +161,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Port");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenMissingEndpoint_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenMissingEndpoint_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -173,11 +180,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Endpoint");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenMissingJwtKey_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenMissingJwtKey_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -191,11 +199,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Jwt:Key");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenJwtKeyExactly32Chars_ReturnsTrue()
+    public async Task ValidateRequiredConfiguration_WhenJwtKeyExactly32Chars_ReturnsSuccess()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -209,11 +218,11 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsTrue();
+        await Assert.That(result.IsSuccess).IsTrue();
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenJwtKey31Chars_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenJwtKey31Chars_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -227,11 +236,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Jwt:Key");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenJwtKeyTooShort_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenJwtKeyTooShort_ReturnsFailure()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -245,11 +255,12 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors[0].Message).Contains("Jwt:Key");
     }
 
     [Test]
-    public async Task ValidateRequiredConfiguration_WhenAllMissing_ReturnsFalse()
+    public async Task ValidateRequiredConfiguration_WhenAllMissing_ReturnsFailureWithMultipleErrors()
     {
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -263,7 +274,8 @@ public class ConfigurationValidatorTests
 
         var result = ConfigurationValidator.ValidateRequiredConfiguration(config, _loggerMock.Object);
 
-        await Assert.That(result).IsFalse();
+        await Assert.That(result.IsSuccess).IsFalse();
+        await Assert.That(result.Errors.Count).IsEqualTo(4);
     }
 
     [Test]

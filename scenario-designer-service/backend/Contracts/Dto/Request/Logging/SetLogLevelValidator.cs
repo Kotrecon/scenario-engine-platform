@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using ScenarioDesigner.Contracts.Result.Common;
 
 namespace ScenarioDesigner.Contracts.Dto.Request.Logging;
 
@@ -9,24 +9,24 @@ public static class SetLogLevelValidator
         "Debug", "Information", "Warning", "Error", "Fatal"
     };
 
-    public static ValidationResult? Validate(SetLogLevelRequest? request)
+    public static ScenarioDesigner.Contracts.Result.Common.Result Validate(SetLogLevelRequest? request)
     {
         if (request is null)
-            return new ValidationResult("Request is required.");
+            return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new ValidationError("Request is required.", new[] { "request:required" }));
 
         if (string.IsNullOrWhiteSpace(request.Level))
-            return new ValidationResult("Level is required.", new[] { nameof(request.Level) });
+            return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new ValidationError("Level is required.", new[] { "level:required" }));
 
         if (!ValidLevels.Contains(request.Level))
         {
-            return new ValidationResult(
+            return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new ValidationError(
                 $"Invalid level: {request.Level}. Valid levels: {string.Join(", ", ValidLevels)}",
-                new[] { nameof(request.Level) });
+                new[] { "level:invalid" }));
         }
 
         if (request.Category is not null && string.IsNullOrWhiteSpace(request.Category))
-            return new ValidationResult("Category cannot be empty string.", new[] { nameof(request.Category) });
+            return ScenarioDesigner.Contracts.Result.Common.Result.Failure(new ValidationError("Category cannot be empty string.", new[] { "category:empty" }));
 
-        return ValidationResult.Success;
+        return ScenarioDesigner.Contracts.Result.Common.Result.Success();
     }
 }

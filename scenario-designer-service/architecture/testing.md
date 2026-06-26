@@ -2,208 +2,240 @@
 
 ## Юнит-тесты
 
-### Приоритет 1: Критичная инфраструктура
+### Operability
 
-**ConfigurationValidator** — fail-fast при старте
+#### **ConfigurationValidator** — fail-fast при старте
 
-- [x] Валидные настройки → `ValidateRequiredConfiguration` возвращает `true`
-- [x] Отсутствует обязательная настройка (например, `Jwt:Key`) → возвращает `false`
-- [x] Пустая строка в обязательной настройке → возвращает `false`
-- [x] Логирует конкретное сообщение об ошибке
-- [x] Port = 0 → false
-- [x] Port = -1 → false
-- [x] Port = "abc" → false
-- [x] Port = 65535 → true
-- [x] Port = 99999 → false
-- [x] Jwt:Key ровно 32 символа → true
-- [x] Jwt:Key 31 символ → false
-- [x] Jwt:Key "short" → false
-- [x] Все настройки отсутствуют (null) → false
+- Валидные настройки → `ValidateRequiredConfiguration` возвращает `true`
+- Отсутствует обязательная настройка (например, `Jwt:Key`) → возвращает `false`
+- Пустая строка в обязательной настройке → возвращает `false`
+- Логирует конкретное сообщение об ошибке
+- Port = 0 → false
+- Port = -1 → false
+- Port = "abc" → false
+- Port = 65535 → true
+- Port = 99999 → false
+- Jwt:Key ровно 32 символа → true
+- Jwt:Key 31 символ → false
+- Jwt:Key "short" → false
+- Все настройки отсутствуют (null) → false
 
-**ReadinessHealthCheck** — сложная логика с кэшем
+#### **ReadinessHealthCheck** — сложная логика с кэшем
 
-- [x] Shutdown flag (`IsCancellationRequested = true`) → сразу `Unhealthy`, без похода в БД
-- [x] Кэш свежий (< 5 сек) → возвращает из кэша, БД не дёргается
-- [x] Кэш протух (> 5 сек) → идёт в БД, обновляет кэш
-- [x] БД упала → `Unhealthy` + запись в лог
-- [x] Unhealthy результат кэшируется (не долбить мёртвую БД)
-- [x] Shutdown не дёргает БД
+- Shutdown flag (`IsCancellationRequested = true`) → сразу `Unhealthy`, без похода в БД
+- Кэш свежий (< 5 сек) → возвращает из кэша, БД не дёргается
+- Кэш протух (> 5 сек) → идёт в БД, обновляет кэш
+- БД упала → `Unhealthy` + запись в лог
+- Unhealthy результат кэшируется (не долбить мёртвую БД)
+- Shutdown не дёргает БД
 
-**MinimalResponseWriter** — формат ответа
+#### **MinimalResponseWriter** — формат ответа
 
-- [x] Возвращает `{"status":"Healthy"}` для Healthy
-- [x] Возвращает `{"status":"Unhealthy"}` для Unhealthy
-- [x] Возвращает `{"status":"Degraded"}` для Degraded
-- [x] Content-Type: `application/json`
-- [x] Не раскрывает внутренние детали (exception, stack trace)
-- [x] Body не пустой
+- Возвращает `{"status":"Healthy"}` для Healthy
+- Возвращает `{"status":"Unhealthy"}` для Unhealthy
+- Возвращает `{"status":"Degraded"}` для Degraded
+- Content-Type: `application/json`
+- Не раскрывает внутренние детали (exception, stack trace)
+- Body не пустой
 
-### Приоритет 2: Бизнес-логика и контракты
+#### **ExceptionHandlerMiddleware**
 
-**LoggingController** — изменение уровня логирования в runtime
+- `InvokeAsync_MapsExceptionToCorrectStatusCode` (5 кейсов) — ArgumentException→400, KeyNotFoundException→404, UnauthorizedAccessException→403, TimeoutException→504, Exception→500
+- `InvokeAsync_ReturnsCorrectJsonFormat` — error.code и error.message
+- `InvokeAsync_DoesNotLeakInternalDetails` — нет StackTrace, InnerException, секретов
 
-- [x] `SetLogLevel` с валидным уровнем → возвращает 200, меняет root
-- [x] `SetLogLevel` с null Category → меняет root
-- [x] `SetLogLevel` с пустым Category → возвращает 400 (ловит валидатор)
-- [x] `SetLogLevel` с category → обновляет override
-- [x] `SetLogLevel` с category → логирует Warning
-- [x] `SetLogLevel` с category + null User → логирует "Unknown"
-- [x] `SetLogLevel` с неизвестным category → возвращает 404 + текст ошибки
-- [x] `SetLogLevel` с невалидным уровнем → возвращает 400 + текст ошибки
-- [x] `SetLogLevel` с null level → возвращает 400 + текст ошибки
-- [x] `SetLogLevel` с forbidden level (Fatal) → возвращает 400 + "forbidden"
-- [x] `SetLogLevel` (root) логирует Warning
-- [x] `SetLogLevel` (root) без User → логирует "Unknown"
-- [x] `SetLogLevel` (root) с пустым Identity → логирует "Unknown"
-- [x] `SetLogLevel` (root) с null Identity → логирует "Unknown"
-- [x] `GetLogLevel` → возвращает Default + Overrides
-- [x] `GetCategories` → возвращает реальные элементы
-- [x] Валидатор интегрирован в контроллер
-- [x] Убран unreachable code (Enum.TryParse после валидатора)
+---
 
-**DTO/Request** — валидация и сериализация (шаблон, не удалять!)
+### Observability
 
-- Обязательные поля не могут быть null/empty
-- Строки имеют правильную длину (min/max)
-- Числа в допустимом диапазоне
-- Email, URL, GUID — правильный формат
-- Имена полей соответствуют контракту (camelCase)
-- Null значения обрабатываются правильно
-- Enum сериализуется как строка/число
-- DateTime форматируется правильно (ISO 8601)
+#### **RequestResponseLoggingMiddleware**
 
-**SetLogLevelRequest + SetLogLevelValidator:**
+- `InvokeAsync_LogsSuccessfulRequest` — Information лог с method, path, status, duration
+- `InvokeAsync_LogsErrorStatusAsWarning` — Warning лог для 4xx/5xx
 
-- [x] Request = null → ошибка
-- [x] Level = null → ошибка
-- [x] Level = "" → ошибка
-- [x] Level = "Critical" (невалидный) → ошибка
-- [x] Level = "Warning" → успех
-- [x] Category = null → успех
-- [x] Category = "" → ошибка
-- [x] Category = "Microsoft.AspNetCore" → успех
+#### **CorrelationIdMiddleware**
 
-### Приоритет 3: Конфигурация и безопасность
+- `InvokeAsync_WhenHeaderMissing_GeneratesCorrelationId` — генерирует GUID v7
+- `InvokeAsync_WhenHeaderPresent_UsesIncomingCorrelationId` — прокидывает входящий id
+- `InvokeAsync_SetsCorrelationIdInItems` — записывает в context.Items
+- `InvokeAsync_SetsActivityTag` — устанавливает tag correlation.id в Activity
 
-**Options (AppSettings, OpenTelemetryOptions)** — валидация DataAnnotations
+#### **OpenTelemetryOptions** — валидация DataAnnotations
 
-**AppSettings:**
+- Endpoint = null → валидация падает ([Required])
+- Endpoint = "" → валидация падает ([Required])
+- Endpoint = `http://localhost:4317` → валидация проходит
+- Endpoint = "https://..." → валидация проходит
+- Protocol = Grpc → валидация проходит
+- Protocol = HttpProtobuf → валидация проходит
+- UseConsoleExporter = false → валидация проходит
+- UseConsoleExporter = true → валидация проходит
+- Headers пустой → валидация проходит
+- Headers с значениями → валидация проходит
+- LogLevel пустой → валидация проходит
+- LogLevel с значениями → валидация проходит
+- Default values корректны
 
-- [x] ServiceName = null → валидация падает ([Required])
-- [x] ServiceName = "" → валидация падает ([Required])
-- [x] ServiceName = "ValidService" → валидация проходит
-- [x] Port = 0 → валидация падает ([Range(1, 65535)])
-- [x] Port = -1 → валидация падает ([Range(1, 65535)])
-- [x] Port = 65536 → валидация падает ([Range(1, 65535)])
-- [x] Port = 1 → валидация проходит (минимум)
-- [x] Port = 65535 → валидация проходит (максимум)
-- [x] Port = 8080 → валидация проходит
+---
 
-**OpenTelemetryOptions:**
+### API
 
-- [x] Endpoint = null → валидация падает ([Required])
-- [x] Endpoint = "" → валидация падает ([Required])
-- [x] Endpoint = `http://localhost:4317` → валидация проходит
-- [x] Endpoint = "https://..." → валидация проходит
-- [x] Protocol = Grpc → валидация проходит
-- [x] Protocol = HttpProtobuf → валидация проходит
-- [x] UseConsoleExporter = false → валидация проходит
-- [x] UseConsoleExporter = true → валидация проходит
-- [x] Headers пустой → валидация проходит
-- [x] Headers с значениями → валидация проходит
-- [x] LogLevel пустой → валидация проходит
-- [x] LogLevel с значениями → валидация проходит
-- [x] Default values корректны
+#### **LoggingController** — изменение уровня логирования в runtime
 
-**Security Extensions** — JWT + policies
+- `SetLogLevel` с валидным уровнем → возвращает 200, меняет root
+- `SetLogLevel` с null Category → меняет root
+- `SetLogLevel` с пустым Category → возвращает 400 (ловит валидатор)
+- `SetLogLevel` с category → обновляет override
+- `SetLogLevel` с category → логирует Warning
+- `SetLogLevel` с category + null User → логирует "Unknown"
+- `SetLogLevel` с неизвестным category → возвращает 404 + текст ошибки
+- `SetLogLevel` с невалидным уровнем → возвращает 400 + текст ошибки
+- `SetLogLevel` с null level → возвращает 400 + текст ошибки
+- `SetLogLevel` с forbidden level (Fatal) → возвращает 400 + "forbidden"
+- `SetLogLevel` (root) логирует Warning
+- `SetLogLevel` (root) без User → логирует "Unknown"
+- `SetLogLevel` (root) с пустым Identity → логирует "Unknown"
+- `SetLogLevel` (root) с null Identity → логирует "Unknown"
+- `GetLogLevel` → возвращает Default + Overrides
+- `GetCategories` → возвращает реальные элементы
+- Валидатор интегрирован в контроллер
+- Убран unreachable code (Enum.TryParse после валидатора)
 
-**AuthenticationExtensions:**
+#### **SetLogLevelRequest + SetLogLevelValidator**
 
-- [x] ValidateIssuer = true
-- [x] ValidIssuer из конфига (Jwt:Issuer)
-- [x] ValidIssuer = "ScenarioDesigner" (default)
-- [x] ValidIssuer независим от конфига
-- [x] ValidateAudience = true
-- [x] ValidAudience из конфига (Jwt:Audience)
-- [x] ValidAudience = "ScenarioDesigner" (default)
-- [x] ValidAudience независим от конфига
-- [x] ValidateLifetime = true
-- [x] ValidateIssuerSigningKey = true
-- [x] IssuerSigningKey != null
-- [x] ClockSkew = 1 minute
+- Request = null → ошибка
+- Level = null → ошибка
+- Level = "" → ошибка
+- Level = "Critical" (невалидный) → ошибка
+- Level = "Warning" → успех
+- Category = null → успех
+- Category = "" → ошибка
+- Category = "Microsoft.AspNetCore" → успех
 
-**AuthorizationExtensions:**
+---
 
-- [x] Policy AdminOnly существует
-- [x] AdminOnly содержит RolesAuthorizationRequirement с ролью Admin
-- [x] Policy Operator существует
-- [x] Operator содержит RolesAuthorizationRequirement с ролями Admin, Operator
-- [x] Policy AuditViewer существует
-- [x] AuditViewer содержит RolesAuthorizationRequirement с ролями Admin, Operator, Auditor
+### Configuration
 
-**ServiceExtensions** — DI конфигурация
+#### **AppSettings** — валидация DataAnnotations
 
-- [ ] Все зависимости резолвятся (нет `InvalidOperationException`)
-- [ ] Scoped сервисы не инжектятся в Singleton
+- ServiceName = null → валидация падает ([Required])
+- ServiceName = "" → валидация падает ([Required])
+- ServiceName = "ValidService" → валидация проходит
+- Port = 0 → валидация падает ([Range(1, 65535)])
+- Port = -1 → валидация падает ([Range(1, 65535)])
+- Port = 65536 → валидация падает ([Range(1, 65535)])
+- Port = 1 → валидация проходит (минимум)
+- Port = 65535 → валидация проходит (максимум)
+- Port = 8080 → валидация проходит
+
+---
+
+### Security
+
+#### **AuthenticationExtensions** — JWT
+
+- ValidateIssuer = true
+- ValidIssuer из конфига (Jwt:Issuer)
+- ValidIssuer = "ScenarioDesigner" (default)
+- ValidIssuer независим от конфига
+- ValidateAudience = true
+- ValidAudience из конфига (Jwt:Audience)
+- ValidAudience = "ScenarioDesigner" (default)
+- ValidAudience независим от конфига
+- ValidateLifetime = true
+- ValidateIssuerSigningKey = true
+- IssuerSigningKey != null
+- ClockSkew = 1 minute
+
+#### **AuthorizationExtensions** — policies
+
+- Policy AdminOnly существует
+- AdminOnly содержит RolesAuthorizationRequirement с ролью Admin
+- Policy Operator существует
+- Operator содержит RolesAuthorizationRequirement с ролями Admin, Operator
+- Policy AuditViewer существует
+- AuditViewer содержит RolesAuthorizationRequirement с ролями Admin, Operator, Auditor
+
+---
+
+### Infrastructure
+
+#### **CorsExtensions**
+
+- `AddCustomCors_RegistersCorsServices` — регистрирует ICorsPolicyProvider и IOptions<CorsOptions>
+- `AddCustomCors_DefaultPolicyExists` — DefaultPolicy не null
+- `AddCustomCors_DefaultPolicyResolvesViaProvider` — policy резолвится через provider
+- `AddCustomCors_DefaultPolicy_AllowsEverything` — Origins содержит "_", Methods содержит "_", Headers содержит "\*"
+
+#### **ServiceExtensions** — DI конфигурация
+
+- Все зависимости резолвятся (нет `InvalidOperationException`)
+- Scoped сервисы не инжектятся в Singleton
 
 ---
 
 ## Интеграционные тесты
 
-- **Health endpoints**
+### Health endpoints
 
-- [x] `/health/live` возвращает 200 + `{"status":"Healthy"}`
-- [x] `/health/ready` возвращает 200
-- [ ] `/health` агрегирует все проверки
-- [ ] При shutdown readiness возвращает 503
+- `/health/live` возвращает 200 + `{"status":"Healthy"}`
+- `/health/ready` возвращает 200
+- `/health` агрегирует все проверки
+- При shutdown readiness возвращает 503
 
-- **Authentication & Authorization**
+### Authentication & Authorization
 
-- [ ] JWT authentication end-to-end
-- [ ] Authorization policies (Admin/Operator/Auditor)
+- JWT authentication end-to-end
+- Authorization policies (Admin/Operator/Auditor)
 
-- **Controllers**
+### Controllers
 
-- [ ] LoggingController end-to-end
+- LoggingController end-to-end
 
-- **Correlation ID**
+### Correlation ID
 
-- [ ] Response header `X-Correlation-Id` возвращается в ответе
-- [ ] Incoming `X-Correlation-Id` прокидывается в response без перегенерации
+- Response header `X-Correlation-Id` возвращается в ответе
+- Incoming `X-Correlation-Id` прокидывается в response без перегенерации
 
 ---
 
 ## Что НЕ нужно тестировать
 
+Следующие компоненты либо тривиальны, либо покрываются интеграционными тестами — дополнительные unit-тесты не требуются:
+
 - **HealthCheckExtensions** — тривиальная регистрация, проверяется интеграционно
-- **RateLimitingExtensions** — настраивается через ASP.NET Core
-- **CorsExtensions** — unit-тесты регистрации и проверки policy (`Extensions/Cors/CorsExtensionsTests.cs`)
+- **RateLimitingExtensions** — настраивается через ASP.NET Core built-in API
+- **CorsExtensions** — unit-тесты регистрации и проверки policy уже есть (`Extensions/Cors/CorsExtensionsTests.cs`), дополнительная логика покрывается интеграционными тестами
 - **CorrelationIdExtensions** — тривиальная регистрация, проверяется интеграционно
+- **RequestResponseLoggingExtensions** — тривиальная регистрация
+- **ExceptionHandlerExtensions** — тривиальная регистрация
 - **Program.cs** — только интеграционные тесты
 
 ---
 
 ## Итого
 
-**Юнит-тесты:** 101 тест
-**Покрытие:** 51.1% (line), 61.6% (branch)
-**Классы на 100%:** 10 из 13
+**Юнит-тесты:** 108 тестов  
+**Покрытие:** 51.5% (line), 63% (branch)  
+**Классы на 100%:** 11 из 14
 
-| Класс | Тестов | Покрытие |
-|-------|--------|----------|
-| ConfigurationValidator | 15 | 100% |
-| ReadinessHealthCheck | 8 | 100% |
-| MinimalResponseWriter | 6 | 100% |
-| AppSettings | 9 | 100% |
-| OpenTelemetryOptions | 13 | 100% |
-| SetLogLevelRequest + Validator | 8 | 100% |
-| LoggingController | 16 | 100% (line), 95% (branch) |
-| AuthenticationExtensions | 12 | 100% (line), 50% (branch) |
-| AuthorizationExtensions | 6 | 100% |
-| CorsExtensions | 3 | 100% |
-| CorrelationIdMiddleware | 4 | 84% (line), 83.3% (branch) |
-| RequestResponseLoggingMiddleware | 2 | 100% |
-| RequestResponseLoggingExtensions | — | 0% (пустой метод) |
+| Класс                            | Тестов | Покрытие                   |
+| -------------------------------- | ------ | -------------------------- |
+| ConfigurationValidator           | 15     | 100%                       |
+| ReadinessHealthCheck             | 8      | 100%                       |
+| MinimalResponseWriter            | 6      | 100%                       |
+| AppSettings                      | 9      | 100%                       |
+| OpenTelemetryOptions             | 13     | 100%                       |
+| SetLogLevelRequest + Validator   | 8      | 100%                       |
+| LoggingController                | 16     | 100% (line), 95% (branch)  |
+| AuthenticationExtensions         | 12     | 100% (line), 50% (branch)  |
+| AuthorizationExtensions          | 6      | 100%                       |
+| CorsExtensions                   | 3      | 100%                       |
+| CorrelationIdMiddleware          | 4      | 84% (line), 83.3% (branch) |
+| RequestResponseLoggingMiddleware | 2      | 100%                       |
+| RequestResponseLoggingExtensions | —      | 0% (пустой метод)          |
+| ExceptionHandlerMiddleware       | 7      | 100%                       |
+| ExceptionHandlerExtensions       | —      | 0% (пустой метод)          |
 
 ---
 
@@ -280,3 +312,9 @@ dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCol
 ```
 
 ---
+
+## Связанные документы
+
+- [`api.md`](./api.md) — описывает эндпоинты, которые тестируются
+- [`operability.md`](./operability.md) — описывает health checks, exception handler
+- [`observability.md`](./observability.md) — описывает логирование, correlation ID

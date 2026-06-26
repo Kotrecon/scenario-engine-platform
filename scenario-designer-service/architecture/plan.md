@@ -7,11 +7,11 @@
 - [x] Request/Response logging middleware
 - [x] Correlation ID middleware
 - [x] CORS policy
-- [ ] API Versioning
-- [ ] Swagger/OpenAPI с JWT-авторизацией
-- [ ] ProblemDetails layer (внедрение + рефакторинг кода)
-- [ ] Persistence layer: DbContext, entity configs, migrations, transaction boundary
-- [ ] Messaging layer: publisher/consumer contracts, retry, idempotency, outbox skeleton
+- [ ] API Versioning (observability)
+- [ ] Swagger/OpenAPI с JWT-авторизацией (observability)
+- [ ] ProblemDetails layer (внедрение + рефакторинг кода) (observability)
+- [ ] Persistence layer: DbContext, entity configs, migrations, transaction boundary (operability)
+- [ ] Messaging layer: publisher/consumer contracts, retry, idempotency, outbox skeleton (operability)
 
 ## Фаза 1: UI Kit — адаптация
 

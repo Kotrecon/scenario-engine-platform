@@ -19,6 +19,8 @@
 | Cache         | Redis (планируется)                           | —       |
 | Message Bus   | RabbitMQ / Kafka (планируется)                | —       |
 
+---
+
 ## Структура проекта
 
 ```bash
@@ -42,6 +44,9 @@ backend/
 │   │   └── CorrelationIdMiddleware.cs
 │   ├── Cors/
 │   │   └── CorsExtensions.cs
+│   ├── ExceptionHandler/
+│   │   ├── ExceptionHandlerExtensions.cs
+│   │   └── ExceptionHandlerMiddleware.cs
 │   ├── RequestResponseLogging/
 │   │   ├── RequestResponseLoggingExtensions.cs
 │   │   └── RequestResponseLoggingMiddleware.cs
@@ -89,9 +94,13 @@ backend/
 └── appsettings.Development.json
 ```
 
+---
+
 ## Регистрация сервисов (порядок в Program.cs)
 
-```text
+> Это основной источник истины для порядка регистрации и middleware pipeline.
+
+```csharp
 1. ConfigurationValidator.ValidateRequiredConfiguration — fail-fast
 2. builder.AddAppSettings() — IOptions<T> с валидацией
 3. builder.AddCustomLogging() — Serilog + LoggingLevelSwitch
@@ -99,24 +108,21 @@ backend/
 5. builder.AddCustomAuthentication() — JWT Bearer
 6. builder.AddCustomAuthorization() — Policy-based
 7. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
-8. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
-9. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
-10. builder.Services.AddCustomHealthChecks() — health checks DI
-11. builder.Services.AddCustomRateLimiting() — rate limiter DI
-12. app.MapControllers() — MVC pipeline
-13. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
-14. app.UseCustomCorrelationId() — Correlation ID middleware
-15. app.UseCustomRequestResponseLogging() — Request/Response logging middleware
-16. app.UseRateLimiter() — rate limiter middleware
-17. app.UseCustomHealthChecks() — health endpoints на порту 8081
+8. builder.Services.AddCustomExceptionHandler() — Exception Handler
+9. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
+10. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
+11. builder.Services.AddCustomHealthChecks() — health checks DI
+12. builder.Services.AddCustomRateLimiting() — rate limiter DI
+13. app.MapControllers() — MVC pipeline
+14. app.UseCustomExceptionHandler() — Exception Handler (ПЕРВЫМ middleware)
+15. app.UseCors() — CORS middleware
+16. app.UseCustomCorrelationId() — Correlation ID middleware
+17. app.UseCustomRequestResponseLogging() — Request/Response logging middleware
+18. app.UseRateLimiter() — rate limiter middleware
+19. app.UseCustomHealthChecks() — health endpoints на порту 8081
 ```
 
-## Порты
-
-| Порт | Назначение     | Доступ                 |
-| ---- | -------------- | ---------------------- |
-| 8080 | API (основной) | Внешний                |
-| 8081 | Health checks  | Только внутренняя сеть |
+---
 
 ## Безопасность
 
@@ -129,6 +135,8 @@ backend/
 | Audience       | ScenarioDesigner                                |
 | ClockSkew      | 1 минута                                        |
 
+---
+
 ## Среды
 
 | Параметр      | Production                                 | Development                             |
@@ -138,146 +146,13 @@ backend/
 | OTel endpoint | `http://otel-collector:4317`               | `http://localhost:4317`                 |
 | JWT Key       | YourSuperSecretKeyAtLeast32CharactersLong! | DevelopmentKeyAtLeast32CharactersLong!! |
 
-## CORS
-
-| Параметр         | Значение                                  | Описание                     |
-| ---------------- | ----------------------------------------- | ---------------------------- |
-| AllowedOrigins   | `*`                                       | Все источники (для разработки) |
-| AllowedMethods   | GET, POST, PUT, DELETE                     | Базовый CRUD                 |
-| AllowedHeaders   | `*`                                       | Все заголовки                |
-| AllowCredentials | false                                     | Без credentials              |
-| MaxAge           | 3600                                      | Кэширование preflight (1 час)|
-
-> **TODO:** см. `architecture/TODO.md` — ограничить origins для production
-
 ---
 
-## ADR (Architecture Decision Records)
+## Связанные документы
 
-### ADR-001: Web SDK вместо Console SDK
-
-**Статус:** Принято
-
-**Контекст:** Проект был начат как консольный (Microsoft.NET.Sdk), но требовался ASP.NET Core для API, controllers, JWT auth.
-
-**Решение:** Переключиться на `Microsoft.NET.Sdk.Web`.
-
-**Последствия:**
-
-- Доступны AddControllers, MapControllers, middleware pipeline
-- Kestrel встроен
-- Дополнительные пакеты не нужны (Microsoft.AspNetCore.\* уже в SDK)
+- [`operability.md`](./operability.md) — Health Checks, Graceful Shutdown, Rate Limiting, CORS, Exception Handler
+- [`observability.md`](./observability.md) — Логирование (Serilog), Request/Response Logging, OpenTelemetry
+- [`adr.md`](./adr.md) — Architecture Decision Records
+- [`TODO.md`](./TODO.md) — Все незавершённые задачи
 
 ---
-
-### ADR-002: Serilog через appsettings.json
-
-**Статус:** Принято
-
-**Контекст:** Serilog можно настраивать программно (WriteTo.Console) или через конфигурацию (ReadFrom.Configuration).
-
-**Решение:** Стандартный формат Serilog в appsettings.json + ReadFrom.Configuration.
-
-**Последствия:**
-
-- Sinks настраиваются через JSON (не код)
-- Добавление/удаление sinks без перекомпиляции
-- Enricherse конфигурации
-
----
-
-### ADR-003: LoggingLevelSwitch в DI
-
-**Статус:** Принято
-
-**Контекст:** Уровни логирования должны меняться на лету через API без restart.
-
-**Решение:** LoggingLevelSwitch зарегистрирован как singleton в DI, контроллер получает его через constructor injection.
-
-**Последствия:**
-
-- Динамическое изменение уровней через PUT /api/logging/level
-- Нет restart для смены уровня
-- Fatal и Verbose запрещены (безопасность)
-
----
-
-### ADR-004: Policy-based авторизация
-
-**Статус:** Принято
-
-**Контекст:** Нужно разграничить доступ: Admin (изменение), Operator (чтение), Auditor (только чтение).
-
-**Решение:** Policy-based авторизация с тремя политиками: AdminOnly, Operator, AuditViewer.
-
-**Последствия:**
-
-- Гибкость: можно добавить policy без изменения кода контроллера
-- Тестируемость: policies можно проверить через IAuthorizationService
-- Читаемость: `[Authorize(Policy = "AdminOnly")]` вместо `[Authorize(Roles = "Admin")]`
-
----
-
-### ADR-005: Health checks на отдельном порту
-
-**Статус:** Принято
-
-**Контекст:** Health checks должны быть доступны для оркестратора (Kubelet, Prometheus), но не доступны извне.
-
-**Решение:** Два Kestrel-эндпоинта: API (8080) и Health (8081). Health-порт не маршрутизируется наружу (firewall / Nginx / Cloud LB).
-
-**Последствия:**
-
-- Middleware (logging, correlation, swagger, CORS) автоматически исключены из health
-- Сетевая изоляция вместо секретных заголовков
-- Проще настраивать firewall / Nginx
-
----
-
-### ADR-006: Rate limiting на health-ветку
-
-**Статус:** Принято
-
-**Контекст:** Даже с сетевой изоляцией, при утечке учётных данных или DDoS-атаке health-чеки могут перегрузить БД.
-
-**Решение:** Fixed window limiter: 30 запросов за 10 секунд на `/health/*`.
-
-**Последствия:**
-
-- Дополнительная мера защиты (не основная)
-- Kubelet (5-10 сек) + Prometheus (15-30 сек) + 3 эндпоинта = ~5-6 запросов за 10 сек
-- Лимит 30 — с запасом
-
----
-
-### ADR-007: CORS AllowAll для разработки
-
-**Статус:** Принято (временно)
-
-**Контекст:** Фронтенд и API могут работать на разных портах/доменах во время разработки. Нужно разрешить кросс-доменные запросы.
-
-**Решение:** AllowAll политика (`*` origins, `*` methods, `*` headers) для разработки. В production будет ограничена.
-
-**Последствия:**
-
-- Удобно для локальной разработки
-- Не безопасно для production (нужно ограничить origins)
-- Конфигурация в appsettings.json, политика в CorsExtensions.cs
-- TODO: см. architecture/TODO.md
-
----
-
-### ADR-008: Correlation ID через Guid.CreateVersion7
-
-**Статус:** Принято
-
-**Контекст:** Нужно связывать логи и трейсы в рамках одного запроса для отладки и мониторинга.
-
-**Решение:** X-Correlation-Id генерируется через Guid.CreateVersion7 (.NET 10) или прокидывается из входящего заголовка. Добавляется в LogContext (Serilog) и Activity (OpenTelemetry).
-
-**Последствия:**
-
-- Time-ordered UUID (v7) — логи сортируются по времени
-- Совместим с OTel trace-id
-- Заголовок возвращается в ответе для клиента
-- Не работает на health-checks (отдельный порт 8081)

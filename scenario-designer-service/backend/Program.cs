@@ -1,6 +1,7 @@
 using ScenarioDesigner.Extensions;
 using ScenarioDesigner.Extensions.CorrelationId;
 using ScenarioDesigner.Extensions.Cors;
+using ScenarioDesigner.Extensions.ExceptionHandler;
 using ScenarioDesigner.Extensions.HealthChecks;
 using ScenarioDesigner.Extensions.RateLimiting;
 using ScenarioDesigner.Extensions.RequestResponseLogging;
@@ -64,6 +65,13 @@ try
     builder.Services.AddCustomCors();
 
     // ------------------------------------------------------------------------
+    // 5.2 EXCEPTION HANDLER
+    // Перехватывает все необработанные исключения.
+    // Возвращает единообразный JSON: {"error": {"code": 400, "message": "..."}}
+    // ------------------------------------------------------------------------
+    builder.Services.AddCustomExceptionHandler();
+
+    // ------------------------------------------------------------------------
     // 5.3 CORRELATION ID
     // Генерирует X-Correlation-Id (Guid.CreateVersion7()) или прокидывает
     // входящий. Добавляет в LogContext и Activity для трассировки.
@@ -97,7 +105,13 @@ try
     var app = builder.Build();
 
     // ------------------------------------------------------------------------
-    // 6.1 CORS — до всех остальных middleware
+    // 6.1 EXCEPTION HANDLER — ПЕРВЫМ middleware
+    // Перехватывает исключения от всех последующих middleware.
+    // ------------------------------------------------------------------------
+    app.UseCustomExceptionHandler();
+
+    // ------------------------------------------------------------------------
+    // 6.2 CORS — до всех остальных middleware
     // ------------------------------------------------------------------------
     app.UseCors();
 

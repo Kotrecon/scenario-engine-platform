@@ -3,33 +3,29 @@
 Визуальный редактор сценариев оповещения для системы ситуационного управления (ЛСО).  
 Часть платформы **Scenario Engine Platform** для критической инфраструктуры.
 
+![ASP.NET](https://img.shields.io/badge/ASP.NET-10-512BD4?style=flat&logo=dotnet)
+![C#](https://img.shields.io/badge/C%23-13-239120?style=flat&logo=csharp)
+![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?style=flat&logo=javascript)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=flat&logo=postgresql)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat&logo=html5)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3)
+
 **GitHub:** `https://github.com/Kotrecon/scenario-engine-platform`
 
-## Архитектура
+---
 
-```bash
-backend/           — C# .NET 10 API (ASP.NET Core Web API)
-frontend/          — Vanilla JS UI (планируется)
-architecture/      — Документация, ADR, планы развития
-docs-reference/    — Справочные документы (ГОСТ, ISA-18.2, EEMUA 191)
-temp/              — Временные файлы (gitignored)
-```
+## Что это
 
-## Стек
+Scenario Designer — это бэкенд-сервис для управления сценариями оповещения на критической инфраструктуре. Позволяет:
 
-| Компонент   | Технология                                   |
-| ----------- | -------------------------------------------- |
-| Runtime     | .NET 10.0                                    |
-| SDK         | Microsoft.NET.Sdk.Web                        |
-| DI          | Microsoft.Extensions.DependencyInjection     |
-| Logging     | Serilog + OTel                               |
-| Telemetry   | OpenTelemetry (traces, metrics, logs → OTLP) |
-| Auth        | JWT Bearer + Policy-based авторизация        |
-| Health      | ASP.NET Core Health Checks (два порта)       |
-| Rate Limit  | System.Threading.RateLimiting                |
-| ORM         | EF Core (планируется)                        |
-| Cache       | Redis (планируется)                          |
-| Message Bus | RabbitMQ / Kafka (планируется)               |
+- Создавать и редактировать сценарии оповещения
+- Управлять устройствами и зонами оповещения
+- Настраивать политики уведомлений
+- Мониторить состояние системы в реальном времени
+
+Соответствует требованиям ГОСТ Р 22.7.05-2022, ISA-18.2, EEMUA 191.
+
+---
 
 ## Быстрый старт
 
@@ -40,140 +36,44 @@ dotnet build
 dotnet run
 ```
 
-## Структура backend
-
-```bash
-backend/
-├── Configuration/
-│   └── Options/
-│       ├── AppSettings.cs
-│       └── OpenTelemetryOptions.cs
-├── Contracts/
-│   └── Dto/
-│       └── Request/
-│           └── Logging/
-│               ├── SetLogLevelRequest.cs
-│               └── SetLogLevelValidator.cs
-├── Controllers/
-│   └── LoggingController.cs
-├── Extensions/
-│   ├── CorrelationId/
-│   │   ├── CorrelationIdExtensions.cs
-│   │   └── CorrelationIdMiddleware.cs
-│   ├── Cors/
-│   │   └── CorsExtensions.cs
-│   ├── RequestResponseLogging/
-│   │   ├── RequestResponseLoggingExtensions.cs
-│   │   └── RequestResponseLoggingMiddleware.cs
-│   ├── HealthChecks/
-│   │   └── HealthCheckExtensions.cs
-│   ├── RateLimiting/
-│   │   └── RateLimitingExtensions.cs
-│   └── ServiceExtensions.cs
-├── HealthChecks/
-│   ├── IDatabaseHealthChecker.cs
-│   ├── DatabaseHealthChecker.cs
-│   ├── MinimalResponseWriter.cs
-│   └── ReadinessHealthCheck.cs
-├── Security/
-│   ├── AuthenticationExtensions.cs
-│   └── AuthorizationExtensions.cs
-├── Validation/
-│   └── Configuration/
-│       └── ConfigurationValidator.cs
-├── Program.cs
-├── ScenarioDesigner.csproj
-├── ScenarioDesigner.Tests.csproj
-├── appsettings.json
-└── appsettings.Development.json
-```
-
-## Порты
-
-| Порт | Назначение     | Доступ                 |
-| ---- | -------------- | ---------------------- |
-| 8080 | API (основной) | Внешний                |
-| 8081 | Health checks  | Только внутренняя сеть |
-
-## Конфигурация
-
-| Параметр      | Production                                 | Development                             |
-| ------------- | ------------------------------------------ | --------------------------------------- |
-| Log level     | Information                                | Debug                                   |
-| Console sink  | false                                      | true                                    |
-| OTel endpoint | `http://otel-collector:4317`               | `http://localhost:4317`                 |
-| JWT Key       | YourSuperSecretKeyAtLeast32CharactersLong! | DevelopmentKeyAtLeast32CharactersLong!! |
-
-## API
-
-| Метод | Роут                      | Описание                     | Доступ      |
-| ----- | ------------------------- | ---------------------------- | ----------- |
-| GET   | `/api/logging/level`      | Текущие уровни логирования   | AuditViewer |
-| PUT   | `/api/logging/level`      | Изменить уровень логирования | AdminOnly   |
-| GET   | `/api/logging/categories` | Список категорий             | AuditViewer |
-
-## Health Checks
-
-| Роут            | Описание               | Порт | Доступ     |
-| --------------- | ---------------------- | ---- | ---------- |
-| `/health/live`  | Процесс жив            | 8081 | Внутренний |
-| `/health/ready` | Готов принимать трафик | 8081 | Внутренний |
-| `/health`       | Агрегированный ответ   | 8081 | Внутренний |
-
-- **Liveness:** всегда Healthy (игнорирует graceful shutdown)
-- **Readiness:** Unhealthy при shutdown, кэш 5 сек, CommandTimeout 3 сек
-- **Rate limiting:** 30 запросов за 10 секунд
-
-## Роли и политики
-
-| Роль     | Описание                              |
-| -------- | ------------------------------------- |
-| Admin    | Полный доступ (изменение, управление) |
-| Operator | Чтение конфигурации и данных          |
-| Auditor  | Только чтение логов и метрик          |
-
-| Политика    | Роли                     |
-| ----------- | ------------------------ |
-| AdminOnly   | Admin                    |
-| Operator    | Admin, Operator          |
-| AuditViewer | Admin, Operator, Auditor |
+API: `http://localhost:8080`  
+Health checks: `http://localhost:8081` (внутренняя сеть)
 
 ---
 
-## План развития
+## Документация
 
-См. `architecture/plan.md` — 14 фаз, 100+ задач.
+- [Архитектура](./architecture/architecture.md) — Стек, структура проекта, регистрация сервисов
+- [Operability](./architecture/operability.md) — Health Checks, Graceful Shutdown, Rate Limiting, CORS, Exception Handler
+- [Observability](./architecture/observability.md) — Логирование, Request/Response Logging, OpenTelemetry
+- [API](./architecture/api.md) — Эндпоинты, форматы, коды ошибок
+- [ADR](./architecture/adr.md) — Architecture Decision Records
+- [TODO](./architecture/TODO.md) — Все незавершённые задачи
+- [План тестирования](./architecture/testing-plan.md) — Статус тестов, покрытие
 
-## Тестирование
-
-| Компонент                      | Тестов | Покрытие  |
-| ------------------------------ | ------ | --------- |
-| ConfigurationValidator         | 15     | 100%      |
-| ReadinessHealthCheck           | 8      | 100%      |
-| MinimalResponseWriter          | 6      | 100%      |
-| AppSettings                    | 9      | 100%      |
-| OpenTelemetryOptions           | 13     | 100%      |
-| SetLogLevelRequest + Validator | 8      | 100%      |
-| LoggingController              | 16     | 100%      |
-| AuthenticationExtensions       | 12     | 100%      |
-| AuthorizationExtensions        | 6      | 100%      |
-| CorsExtensions                 | 3      | 100%      |
-| CorrelationIdMiddleware        | 4      | 84%       |
-| RequestResponseLogging         | 2      | 100%      |
-| **Итого**                      | **101**| **51.1%** |
-
-- Фреймворк: TUnit 1.56.35
-- Моки: Moq 4.20.72
-- Покрытие: Microsoft.Testing.Extensions.CodeCoverage 18.8.0
-- HTML отчёт: `coveragereport/index.html`
-- Запуск: `dotnet test --project "backend/ScenarioDesigner.Tests/ScenarioDesigner.Tests.csproj"`
+---
 
 ## Стандарты
 
-- ISA-18.2 — Alarm Management
-- ISA-88 — Procedure Control
-- EEMUA 191 — Alarm Systems Guide
-- IEC 62443 — Industrial Cybersecurity
-- ГОСТ Р 22.7.05-2022 — Требования ЛСО
-- ГОСТ Р 42.3.01-2021 — Требования к устройствам
-- СП 484.1311500.2020 — Нормы проектирования систем оповещения
+- **ISA-18.2** — Alarm Management
+- **ISA-88** — Procedure Control
+- **EEMUA 191** — Alarm Systems Guide
+- **IEC 62443** — Industrial Cybersecurity
+- **ГОСТ Р 22.7.05-2022** — Требования ЛСО
+- **ГОСТ Р 42.3.01-2021** — Требования к устройствам
+- **СП 484.1311500.2020** — Нормы проектирования систем оповещения
+
+---
+
+## Автор
+
+**[@Kotrecon](https://github.com/Kotrecon)**
+
+Архитектор решений из Санкт-Петербурга. Специализация: .NET, C#, JS, Python, AI/ML, RAG, Агенты, DevOps, GitHub, GitLab, CI/CD, АСУ ТП, промышленное ПО, DB, PostgreSQL.  
+[Telegram](https://t.me/Kotrecon) | [Email](mailto:ermakov_k@mail.ru)
+
+---
+
+## Лицензия
+
+MIT

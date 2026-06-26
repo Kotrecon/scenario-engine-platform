@@ -8,10 +8,12 @@
 
 ```csharp
 // 1. DI
+builder.Services.AddCustomCors();
 builder.Services.AddCustomExceptionHandler();
 
 // 2. Pipeline (ПЕРВЫМ middleware)
 app.UseCustomExceptionHandler();
+app.UseCors();
 app.UseRouting();
 app.UseRateLimiter();
 app.UseAuthentication();

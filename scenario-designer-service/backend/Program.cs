@@ -1,4 +1,5 @@
 using ScenarioDesigner.Extensions;
+using ScenarioDesigner.Extensions.Cors;
 using ScenarioDesigner.Extensions.HealthChecks;
 using ScenarioDesigner.Extensions.RateLimiting;
 using ScenarioDesigner.Security;
@@ -54,7 +55,14 @@ try
     builder.AddCustomAuthorization();
 
     // ------------------------------------------------------------------------
-    // 5.1 HEALTH CHECKS
+    // 5.1 CORS
+    // Текущая политика: AllowAll (для разработки).
+    // TODO: см. architecture/TODO.md — ограничить origins для production.
+    // ------------------------------------------------------------------------
+    builder.Services.AddCustomCors();
+
+    // ------------------------------------------------------------------------
+    // 5.2 HEALTH CHECKS
     // Регистрация health checks в DI.
     // Liveness: всегда Healthy (игнорирует shutdown).
     // Readiness: Unhealthy при shutdown (через IHostApplicationLifetime).
@@ -71,6 +79,11 @@ try
     // 6. ЗАПУСК ХОСТА
     // ------------------------------------------------------------------------
     var app = builder.Build();
+
+    // ------------------------------------------------------------------------
+    // 6.1 CORS — до всех остальных middleware
+    // ------------------------------------------------------------------------
+    app.UseCors();
 
     app.MapControllers();
 

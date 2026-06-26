@@ -6,7 +6,7 @@
 - [ ] Global exception handler middleware
 - [ ] Request/Response logging middleware
 - [ ] Correlation ID middleware
-- [ ] CORS policy
+- [x] CORS policy
 - [ ] API Versioning
 - [ ] Swagger/OpenAPI с JWT-авторизацией
 

@@ -37,6 +37,8 @@ backend/
 ├── Controllers/
 │   └── LoggingController.cs
 ├── Extensions/
+│   ├── Cors/
+│   │   └── CorsExtensions.cs
 │   ├── HealthChecks/
 │   │   └── HealthCheckExtensions.cs
 │   ├── RateLimiting/
@@ -87,11 +89,13 @@ backend/
 4. builder.AddCustomOpenTelemetry() — OTel logs/traces/metrics
 5. builder.AddCustomAuthentication() — JWT Bearer
 6. builder.AddCustomAuthorization() — Policy-based
-7. builder.Services.AddCustomHealthChecks() — health checks DI
-8. builder.Services.AddCustomRateLimiting() — rate limiter DI
-9. app.MapControllers() — MVC pipeline
-10. app.UseRateLimiter() — rate limiter middleware
-11. app.UseCustomHealthChecks() — health endpoints на порту 8081
+7. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
+8. builder.Services.AddCustomHealthChecks() — health checks DI
+9. builder.Services.AddCustomRateLimiting() — rate limiter DI
+10. app.MapControllers() — MVC pipeline
+11. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
+12. app.UseRateLimiter() — rate limiter middleware
+13. app.UseCustomHealthChecks() — health endpoints на порту 8081
 ```
 
 ## Порты
@@ -120,6 +124,18 @@ backend/
 | Console sink  | false                                      | true                                    |
 | OTel endpoint | `http://otel-collector:4317`               | `http://localhost:4317`                 |
 | JWT Key       | YourSuperSecretKeyAtLeast32CharactersLong! | DevelopmentKeyAtLeast32CharactersLong!! |
+
+## CORS
+
+| Параметр         | Значение                                  | Описание                     |
+| ---------------- | ----------------------------------------- | ---------------------------- |
+| AllowedOrigins   | `*`                                       | Все источники (для разработки) |
+| AllowedMethods   | GET, POST, PUT, DELETE                     | Базовый CRUD                 |
+| AllowedHeaders   | `*`                                       | Все заголовки                |
+| AllowCredentials | false                                     | Без credentials              |
+| MaxAge           | 3600                                      | Кэширование preflight (1 час)|
+
+> **TODO:** см. `architecture/TODO.md` — ограничить origins для production
 
 ---
 
@@ -218,3 +234,20 @@ backend/
 - Дополнительная мера защиты (не основная)
 - Kubelet (5-10 сек) + Prometheus (15-30 сек) + 3 эндпоинта = ~5-6 запросов за 10 сек
 - Лимит 30 — с запасом
+
+---
+
+### ADR-007: CORS AllowAll для разработки
+
+**Статус:** Принято (временно)
+
+**Контекст:** Фронтенд и API могут работать на разных портах/доменах во время разработки. Нужно разрешить кросс-доменные запросы.
+
+**Решение:** AllowAll политика (`*` origins, `*` methods, `*` headers) для разработки. В production будет ограничена.
+
+**Последствия:**
+
+- Удобно для локальной разработки
+- Не безопасно для production (нужно ограничить origins)
+- Конфигурация в appsettings.json, политика в CorsExtensions.cs
+- TODO: см. architecture/TODO.md

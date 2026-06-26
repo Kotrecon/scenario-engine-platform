@@ -61,11 +61,13 @@
 ### Порядок в Program.cs
 
 ```text
-1. AddCustomHealthChecks (DI)
-2. AddCustomRateLimiting (DI)
-3. UseRateLimiter (middleware, в основном pipeline)
-4. UseCustomHealthChecks (MapWhen по порту 8081)
-5. Основной API на порту 8080
+1. AddCustomCors (DI)
+2. AddCustomHealthChecks (DI)
+3. AddCustomRateLimiting (DI)
+4. UseCors (middleware, в основном pipeline)
+5. UseRateLimiter (middleware, в основном pipeline)
+6. UseCustomHealthChecks (MapWhen по порту 8081)
+7. Основной API на порту 8080
 ```
 
 ### Инфраструктура (Deployment)

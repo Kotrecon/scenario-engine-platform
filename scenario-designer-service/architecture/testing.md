@@ -185,9 +185,9 @@
 
 ## Итого
 
-**Юнит-тесты:** 102 теста
-**Покрытие:** 44.5% (line), 60.5% (branch), 70% (method)
-**Классы на 100%:** 12 из 19
+**Юнит-тесты:** 101 тест
+**Покрытие:** 51.1% (line), 61.6% (branch)
+**Классы на 100%:** 10 из 13
 
 | Класс | Тестов | Покрытие |
 |-------|--------|----------|
@@ -197,12 +197,13 @@
 | AppSettings | 9 | 100% |
 | OpenTelemetryOptions | 13 | 100% |
 | SetLogLevelRequest + Validator | 8 | 100% |
-| LoggingController | 16 | 100% |
-| AuthenticationExtensions | 12 | 19.5% |
+| LoggingController | 16 | 100% (line), 95% (branch) |
+| AuthenticationExtensions | 12 | 100% (line), 50% (branch) |
 | AuthorizationExtensions | 6 | 100% |
-| CorsExtensions          | 3      | 100%      |
-| CorrelationIdMiddleware | 4      | ~80%      |
-| RequestResponseLogging  | 3      | 100%      |
+| CorsExtensions | 3 | 100% |
+| CorrelationIdMiddleware | 4 | 84% (line), 83.3% (branch) |
+| RequestResponseLoggingMiddleware | 2 | 100% |
+| RequestResponseLoggingExtensions | — | 0% (пустой метод) |
 
 ---
 

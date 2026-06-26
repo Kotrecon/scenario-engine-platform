@@ -3,8 +3,8 @@
 ## Фаза 0: Backend Infrastructure
 
 - [x] Health checks (подробнее: `architecture/operability .md`)
-- [ ] Global exception handler middleware
-- [ ] Request/Response logging middleware
+- [x] Global exception handler middleware
+- [x] Request/Response logging middleware
 - [x] Correlation ID middleware
 - [x] CORS policy
 - [ ] API Versioning

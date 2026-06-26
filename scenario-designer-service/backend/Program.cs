@@ -3,6 +3,7 @@ using ScenarioDesigner.Extensions.CorrelationId;
 using ScenarioDesigner.Extensions.Cors;
 using ScenarioDesigner.Extensions.HealthChecks;
 using ScenarioDesigner.Extensions.RateLimiting;
+using ScenarioDesigner.Extensions.RequestResponseLogging;
 using ScenarioDesigner.Security;
 using ScenarioDesigner.Validation.Configuration;
 using Serilog;
@@ -70,6 +71,13 @@ try
     builder.Services.AddCustomCorrelationId();
 
     // ------------------------------------------------------------------------
+    // 5.4 REQUEST/RESPONSE LOGGING
+    // Логирует method, path, status code, duration.
+    // Не логирует тела request/response.
+    // ------------------------------------------------------------------------
+    builder.Services.AddCustomRequestResponseLogging();
+
+    // ------------------------------------------------------------------------
     // 5.2 HEALTH CHECKS
     // Регистрация health checks в DI.
     // Liveness: всегда Healthy (игнорирует shutdown).
@@ -97,6 +105,11 @@ try
     // 6.2 CORRELATION ID — после CORS, до Rate Limiter
     // ------------------------------------------------------------------------
     app.UseCustomCorrelationId();
+
+    // ------------------------------------------------------------------------
+    // 6.3 REQUEST/RESPONSE LOGGING — после Correlation ID
+    // ------------------------------------------------------------------------
+    app.UseCustomRequestResponseLogging();
 
     app.MapControllers();
 

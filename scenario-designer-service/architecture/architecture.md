@@ -42,6 +42,9 @@ backend/
 │   │   └── CorrelationIdMiddleware.cs
 │   ├── Cors/
 │   │   └── CorsExtensions.cs
+│   ├── RequestResponseLogging/
+│   │   ├── RequestResponseLoggingExtensions.cs
+│   │   └── RequestResponseLoggingMiddleware.cs
 │   ├── HealthChecks/
 │   │   └── HealthCheckExtensions.cs
 │   ├── RateLimiting/
@@ -97,13 +100,15 @@ backend/
 6. builder.AddCustomAuthorization() — Policy-based
 7. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
 8. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
-9. builder.Services.AddCustomHealthChecks() — health checks DI
-10. builder.Services.AddCustomRateLimiting() — rate limiter DI
-11. app.MapControllers() — MVC pipeline
-12. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
-13. app.UseCustomCorrelationId() — Correlation ID middleware
-14. app.UseRateLimiter() — rate limiter middleware
-15. app.UseCustomHealthChecks() — health endpoints на порту 8081
+9. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
+10. builder.Services.AddCustomHealthChecks() — health checks DI
+11. builder.Services.AddCustomRateLimiting() — rate limiter DI
+12. app.MapControllers() — MVC pipeline
+13. app.UseCors() — CORS middleware (ПЕРВЫМ в pipeline)
+14. app.UseCustomCorrelationId() — Correlation ID middleware
+15. app.UseCustomRequestResponseLogging() — Request/Response logging middleware
+16. app.UseRateLimiter() — rate limiter middleware
+17. app.UseCustomHealthChecks() — health endpoints на порту 8081
 ```
 
 ## Порты

@@ -166,13 +166,18 @@
 
 - [ ] LoggingController end-to-end
 
+- **Correlation ID**
+
+- [ ] Response header `X-Correlation-Id` возвращается в ответе
+- [ ] Incoming `X-Correlation-Id` прокидывается в response без перегенерации
+
 ---
 
 ## Что НЕ нужно тестировать
 
 - **HealthCheckExtensions** — тривиальная регистрация, проверяется интеграционно
 - **RateLimitingExtensions** — настраивается через ASP.NET Core
-- **CorsExtensions** — тривиальная регистрация, проверяется интеграционно
+- **CorsExtensions** — unit-тесты регистрации и проверки policy (`Extensions/Cors/CorsExtensionsTests.cs`)
 - **CorrelationIdExtensions** — тривиальная регистрация, проверяется интеграционно
 - **Program.cs** — только интеграционные тесты
 
@@ -180,9 +185,9 @@
 
 ## Итого
 
-**Юнит-тесты:** 92 теста
+**Юнит-тесты:** 99 тестов
 **Покрытие:** 44.5% (line), 60.5% (branch), 70% (method)
-**Классы на 100%:** 10 из 16
+**Классы на 100%:** 11 из 18
 
 | Класс | Тестов | Покрытие |
 |-------|--------|----------|
@@ -195,6 +200,8 @@
 | LoggingController | 16 | 100% |
 | AuthenticationExtensions | 12 | 19.5% |
 | AuthorizationExtensions | 6 | 100% |
+| CorsExtensions          | 3      | 100%      |
+| CorrelationIdMiddleware | 4      | ~80%      |
 
 ---
 

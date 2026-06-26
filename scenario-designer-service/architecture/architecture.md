@@ -68,6 +68,9 @@ backend/
 │   ├── Security/
 │   │   ├── AuthenticationExtensionsTests.cs
 │   │   └── AuthorizationExtensionsTests.cs
+│   ├── Extensions/
+│   │   └── Cors/
+│   │       └── CorsExtensionsTests.cs
 │   └── Validation/
 │       └── ConfigurationValidatorTests.cs
 ├── Security/

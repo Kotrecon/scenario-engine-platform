@@ -86,8 +86,6 @@
 
 ## API
 
-- [ ] API Versioning
-
 ---
 
 ## Result Pattern Library

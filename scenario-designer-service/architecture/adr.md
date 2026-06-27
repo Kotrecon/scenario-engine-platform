@@ -224,13 +224,13 @@
 
 **Маппинг:**
 
-| Исключение | HTTP-код | Сообщение |
-|------------|----------|-----------|
-| ArgumentException | 400 | Invalid request |
-| KeyNotFoundException | 404 | Resource not found |
-| UnauthorizedAccessException | 403 | Access denied |
-| TimeoutException | 504 | Request timed out |
-| Любое другое | 500 | An unexpected error occurred |
+| Исключение                  | HTTP-код | Сообщение                    |
+| --------------------------- | -------- | ---------------------------- |
+| ArgumentException           | 400      | Invalid request              |
+| KeyNotFoundException        | 404      | Resource not found           |
+| UnauthorizedAccessException | 403      | Access denied                |
+| TimeoutException            | 504      | Request timed out            |
+| Любое другое                | 500      | An unexpected error occurred |
 
 **Обоснование:**
 
@@ -286,7 +286,7 @@
 
 **Рассмотренные альтернативы:**
 
-1. **xUnit** — самый популярный, но синтаксис более шумный (Theory, InlineData, Assert.*).
+1. **xUnit** — самый популярный, но синтаксис более шумный (Theory, InlineData, Assert.\*).
 2. **NUnit** — классический, но устаревающий API ([Test], Assert.That без await).
 3. **TUnit** — современный фреймворк, атрибуты как методы, нативный async/await, встроенный coverage.
 
@@ -314,23 +314,24 @@
 
 ## ADR-014: API Versioning (URL-based)
 
-**Статус:** Принято
+**Статус:** Предложено  
+**Дата:** 2026-06-27
 
 **Контекст:** API будет развиваться: новые поля, изменение контрактов, experimental endpoints. Нужен механизм совместимости с существующими клиентами при внесении изменений.
 
 **Рассмотренные альтернативы:**
 
-1. **Query string** (`?api-version=1.0`) — нестандартно,难以 cache.
-2. **Header** (`X-Api-Version: 1.0`) — чисто, но不易于 debugging.
-3. **URL path** (`/api/v1/...`) — стандарт,清晰可见,易于 routing.
+1. **Query string** (`?api-version=1.0`) — нестандартно, сложно кэшировать.
+2. **Header** (`X-Api-Version: 1.0`) — чисто, но неудобно для отладки.
+3. **URL path** (`/api/v1/...`) — стандарт, наглядно, удобно для маршрутизации.
 
-**Решение:** Asp.Versioning.Mvc 10.0.0 с URL-based стратегией. Default version: 1.0. ReportApiVersions: true.
+**Решение:** `Asp.Versioning.Mvc` 10.0.0 с URL-based стратегией. Default version: 1.0. `ReportApiVersions: true`.
 
 **Обоснование:**
 
-- URL清晰可见: `/api/v1/logging/level` — сразу понятно какую версию используешь
+- URL наглядный: `/api/v1/logging/level` — сразу понятно, какую версию используешь
 - Cache-friendly: разные URL = разные ресурсы
-- стандарт для REST API
+- Стандарт для REST API
 - Default version позволяет старым клиентам работать без изменений
 
 **Последствия:**
@@ -338,10 +339,10 @@
 - Все контроллеры получают `[ApiVersion("1.0")]` и `[Route("api/v{version:apiVersion}/[controller]")]`
 - Заголовок `api-supported-versions` в ответе показывает доступные версии
 - Новые версии добавляются через новые атрибуты на контроллерах
+- Требуется миграция существующих маршрутов (`/api/logging/level` → `/api/v1/logging/level`)
 
 **Связанные документы:**
 
 - [`api.md`](./api.md) — эндпоинты с версиями
 - [`architecture.md`](./architecture.md) — регистрация сервисов
-
----
+- [`plan.md`](./plan.md) — задача в Фазе 0

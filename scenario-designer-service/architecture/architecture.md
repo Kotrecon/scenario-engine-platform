@@ -12,6 +12,7 @@
 | Logging       | Serilog.AspNetCore                            | 10.0.0  |
 | Telemetry     | OpenTelemetry.Extensions.Hosting              | 1.16.0  |
 | Auth          | Microsoft.AspNetCore.Authentication.JwtBearer | 10.0.9  |
+| API Versioning| Asp.Versioning.Mvc                            | 10.0.0  |
 | Testing       | TUnit                                         | 1.56.35 |
 | Mocking       | Moq                                           | 4.20.72 |
 | Coverage      | Microsoft.Testing.Extensions.CodeCoverage     | 18.8.0  |
@@ -30,12 +31,24 @@ backend/
 │       ├── AppSettings.cs
 │       └── OpenTelemetryOptions.cs
 ├── Contracts/
-│   └── Dto/
-│       └── Request/
-│           ├── Logging/
-│           │   ├── SetLogLevelRequest.cs
-│           │   └── SetLogLevelValidator.cs
-│           └── Scenarios/
+│   ├── Dto/
+│   │   └── Request/
+│   │       ├── Logging/
+│   │       │   ├── SetLogLevelRequest.cs
+│   │       │   └── SetLogLevelValidator.cs
+│   │       └── Scenarios/
+│   └── Result/
+│       ├── Common/
+│       │   ├── IError.cs
+│       │   ├── Result.cs
+│       │   ├── ResultOfT.cs
+│       │   ├── ValidationError.cs
+│       │   ├── NotFoundError.cs
+│       │   ├── ConflictError.cs
+│       │   ├── ForbiddenError.cs
+│       │   └── BusinessRuleError.cs
+│       └── Web/
+│           └── ResultExtensions.cs
 ├── Controllers/
 │   └── LoggingController.cs
 ├── Extensions/
@@ -66,10 +79,16 @@ backend/
 │   │       ├── AppSettingsTests.cs
 │   │       └── OpenTelemetryOptionsTests.cs
 │   ├── Contracts/
-│   │   └── Dto/
-│   │       └── SetLogLevelRequestTests.cs
+│   │   ├── Dto/
+│   │   │   └── SetLogLevelRequestTests.cs
+│   │   └── Result/
+│   │       ├── ResultTests.cs
+│   │       ├── ResultOfTTests.cs
+│   │       ├── ErrorTests.cs
+│   │       └── ResultExtensionsTests.cs
 │   ├── Controllers/
-│   │   └── LoggingControllerTests.cs
+│   │   ├── LoggingControllerTests.cs
+│   │   └── ApiVersioningTests.cs
 │   ├── HealthChecks/
 │   │   ├── MinimalResponseWriterTests.cs
 │   │   └── ReadinessHealthCheckTests.cs

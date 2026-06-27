@@ -107,19 +107,20 @@ backend/
 4. builder.AddCustomOpenTelemetry() — OTel logs/traces/metrics
 5. builder.AddCustomAuthentication() — JWT Bearer
 6. builder.AddCustomAuthorization() — Policy-based
-7. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
-8. builder.Services.AddCustomExceptionHandler() — Exception Handler
-9. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
-10. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
-11. builder.Services.AddCustomHealthChecks() — health checks DI
-12. builder.Services.AddCustomRateLimiting() — rate limiter DI
-13. app.MapControllers() — MVC pipeline
-14. app.UseCustomExceptionHandler() — Exception Handler (ПЕРВЫМ middleware)
-15. app.UseCors() — CORS middleware
-16. app.UseCustomCorrelationId() — Correlation ID middleware
-17. app.UseCustomRequestResponseLogging() — Request/Response logging middleware
-18. app.UseRateLimiter() — rate limiter middleware
-19. app.UseCustomHealthChecks() — health endpoints на порту 8081
+7. builder.Services.AddApiVersioning() — URL-based versioning (v1)
+8. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
+9. builder.Services.AddCustomExceptionHandler() — Exception Handler
+10. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
+11. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
+12. builder.Services.AddCustomHealthChecks() — health checks DI
+13. builder.Services.AddCustomRateLimiting() — rate limiter DI
+14. app.MapControllers() — MVC pipeline
+15. app.UseCustomExceptionHandler() — Exception Handler (ПЕРВЫМ middleware)
+16. app.UseCors() — CORS middleware
+17. app.UseCustomCorrelationId() — Correlation ID middleware
+18. app.UseCustomRequestResponseLogging() — Request/Response logging middleware
+19. app.UseRateLimiter() — rate limiter middleware
+20. app.UseCustomHealthChecks() — health endpoints на порту 8081
 ```
 
 ---

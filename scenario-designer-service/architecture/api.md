@@ -26,7 +26,7 @@ Authorization: Bearer <token>
 
 ### Версионирование
 
-Версионирование API пока не реализовано. Планируется в Фазе 2.
+URL-based versioning: `/api/v{version}/[controller]`. Default version: 1.0. Заголовок `api-supported-versions` в ответе.
 
 ---
 
@@ -34,10 +34,10 @@ Authorization: Bearer <token>
 
 ### API (порт 8080)
 
-| Метод | Роут                      | Описание                     | Доступ      |
-| ----- | ------------------------- | ---------------------------- | ----------- |
-| GET   | `/api/logging/level`      | Текущие уровни логирования   | AuditViewer |
-| PUT   | `/api/logging/level`      | Изменить уровень логирования | AdminOnly   |
+| Метод | Роут                              | Описание                     | Доступ      |
+| ----- | --------------------------------- | ---------------------------- | ----------- |
+| GET   | `/api/v1/logging/level`           | Текущие уровни логирования   | AuditViewer |
+| PUT   | `/api/v1/logging/level`           | Изменить уровень логирования | AdminOnly   |
 | GET   | `/api/logging/categories` | Список категорий с overrides | AuditViewer |
 
 ### Health Checks (порт 8081 — внутренний)

@@ -138,6 +138,14 @@
 
 ### API
 
+#### **API Versioning** — версионирование URL-based
+
+- LoggingController имеет атрибут `[ApiVersion("1.0")]`
+- LoggingController имеет route `api/v{version:apiVersion}/[controller]`
+- Default API version: 1.0
+- AssumeDefaultVersionWhenUnspecified: true
+- ReportApiVersions: true (заголовок api-supported-versions)
+
 #### **LoggingController** — изменение уровня логирования в runtime
 
 - `SetLogLevel` с валидным уровнем → возвращает 200, меняет root
@@ -273,9 +281,9 @@
 
 ## Итого
 
-**Юнит-тесты:** 154 тестов  
-**Покрытие:** 61.3% (line), 74.7% (branch)  
-**Классы на 100%:** 18 из 32
+**Юнит-тесты:** 156 тестов  
+**Покрытие:** 59.9% (line), 74.6% (branch)  
+**Классы на 100%:** 19 из 33
 
 | Класс                            | Тестов | Покрытие                   |
 | -------------------------------- | ------ | -------------------------- |
@@ -298,6 +306,7 @@
 | Result<T>                        | 14     | 100%                       |
 | ValidationError                  | 5      | 100%                       |
 | ResultExtensions                 | 13     | 100%                       |
+| ApiVersioningTests               | 2      | 100%                       |
 
 ---
 

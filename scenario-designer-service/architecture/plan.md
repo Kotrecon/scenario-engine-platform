@@ -20,7 +20,7 @@
 - [x] CORS policy
 - [x] Result Pattern библиотека (47 тестов, подробнее: [`result-pattern.md`](./result-pattern.md))
 - [x] ProblemDetails layer (RFC 7807) — интеграция с Result Pattern
-- [ ] API Versioning
+- [x] API Versioning (Asp.Versioning.Mvc, URL-based, подробнее: [`api.md`](./api.md))
 - [ ] Swagger/OpenAPI с JWT-авторизацией
 - [ ] Persistence layer: DbContext, entity configs, migrations, transaction boundary (operability)
 - [ ] Messaging layer: publisher/consumer contracts, retry, idempotency, outbox skeleton (operability)

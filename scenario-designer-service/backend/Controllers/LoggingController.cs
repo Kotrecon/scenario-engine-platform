@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ScenarioDesigner.Contracts.Dto.Request.Logging;
@@ -14,7 +15,8 @@ namespace ScenarioDesigner.Controllers;
 // Все изменения логируются с указанием пользователя (аудит).
 // ============================================================================
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [Authorize(Policy = "AdminOnly")]
 public class LoggingController : ControllerBase
 {

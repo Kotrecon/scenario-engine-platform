@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using ScenarioDesigner.Extensions;
 using ScenarioDesigner.Extensions.CorrelationId;
 using ScenarioDesigner.Extensions.Cors;
@@ -61,7 +62,19 @@ try
     builder.AddCustomAuthorization();
 
     // ------------------------------------------------------------------------
-    // 5.1 CORS
+    // 5.1 API VERSIONING
+    // Версионирование URL-based: /api/v1/logging/level
+    // ReportApiVersions: заголовок api-supported-versions в ответе
+    // ------------------------------------------------------------------------
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ReportApiVersions = true;
+    });
+
+    // ------------------------------------------------------------------------
+    // 5.2 CORS
     // Текущая политика: AllowAll (для разработки).
     // TODO: см. architecture/TODO.md — ограничить origins для production.
     // ------------------------------------------------------------------------

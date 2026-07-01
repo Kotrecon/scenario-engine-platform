@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using ScenarioDesigner.Security;
 
 namespace ScenarioDesigner.Tests.Security;
@@ -129,5 +130,17 @@ public class AuthenticationExtensionsTests
         var (_, jwtOptions) = BuildHostWithJwt();
 
         await Assert.That(jwtOptions.TokenValidationParameters.ClockSkew).IsEqualTo(TimeSpan.FromMinutes(1));
+    }
+
+    [Test]
+    public async Task AddCustomAuthentication_SigningKey_IsSymmetricAndSufficientLength()
+    {
+        var (_, jwtOptions) = BuildHostWithJwt();
+
+        var key = jwtOptions.TokenValidationParameters.IssuerSigningKey;
+        await Assert.That(key is SymmetricSecurityKey).IsTrue();
+
+        var symmetricKey = (SymmetricSecurityKey)key;
+        await Assert.That(symmetricKey.Key.Length).IsGreaterThanOrEqualTo(32);
     }
 }

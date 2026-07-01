@@ -1,5 +1,11 @@
 # План разработки Scenario Designer Service
 
+| Поле       | Значение   |
+| ---------- | ---------- |
+| **Версия** | 1.2.0      |
+| **Статус** | Active     |
+| **Дата**   | 2026-07-01 |
+
 > Дорожная карта проекта с разбивкой на фазы.
 >
 > Связанные документы:
@@ -8,6 +14,10 @@
 > - [`observability.md`](./observability.md) — Логирование, Correlation ID, OpenTelemetry
 > - [`result-pattern.md`](./result-pattern.md) — Result Pattern библиотека
 > - [`api.md`](./api.md) — HTTP-контракты
+> - [`architecture.md`](./architecture.md) — Стек технологий, структура проекта
+> - [`adr.md`](./adr.md) — Architecture Decision Records
+> - [`testing.md`](./testing.md) — План тестирования
+> - [`TODO.md`](./TODO.md) — Текущие задачи
 
 ---
 
@@ -18,10 +28,22 @@
 - [x] Request/Response logging middleware
 - [x] Correlation ID middleware
 - [x] CORS policy
-- [x] Result Pattern библиотека (47 тестов, подробнее: [`result-pattern.md`](./result-pattern.md))
+- [x] Result Pattern библиотека (179 тестов, подробнее: [`result-pattern.md`](./result-pattern.md))
 - [x] ProblemDetails layer (RFC 7807) — интеграция с Result Pattern
 - [x] API Versioning (Asp.Versioning.Mvc, URL-based, подробнее: [`api.md`](./api.md))
-- [ ] Swagger/OpenAPI с JWT-авторизацией
+- [x] OpenAPI + Scalar UI с JWT-авторизацией (Microsoft.AspNetCore.OpenApi 10.0.9 + Scalar 2.13.19, подробнее: [`adr.md`](./adr.md) ADR-015)
+- [x] Dev endpoint `/dev/token` для генерации тестовых JWT (только Development)
+- [x] Metadata API endpoint `GET /api/metadata` (публичный, кэш 1 час, подробнее: [`adr.md`](./adr.md) ADR-016)
+- [x] Configuration DTO: `AppSettings`, `JwtOptions`, `OpenTelemetryOptions`, `ApiMetadataOptions` + `ContactInfo` (records с DataAnnotations)
+- [x] Рефакторинг валидатора конфигурации: разбиение на Options-классы с `IValidatableObject` + `ValidateOnStart()`
+- [x] `ConfigurationExtensions` — регистрация Options через `AddOptions<T>().Bind().ValidateDataAnnotations().ValidateOnStart()`
+- [x] `ObservabilityExtensions` — `AddCustomLogging` (Serilog) + `AddCustomOpenTelemetry` (OTLP)
+- [x] Response caching middleware (`AddResponseCaching()` + `UseResponseCaching()`)
+- [x] Authentication/Authorization middleware в pipeline (`UseAuthentication()` + `UseAuthorization()`)
+- [x] Unit-тесты Configuration DTO (AppSettings, JwtOptions, OpenTelemetryOptions, ApiMetadataOptions, ContactInfo)
+- [x] Unit-тесты ConfigurationExtensions (12 тестов)
+- [x] Unit-тесты ObservabilityExtensions (5 тестов)
+- [x] Coverlet настройка (`coverlet.runsettings` для исключения сгенерированного кода)
 - [ ] Persistence layer: DbContext, entity configs, migrations, transaction boundary (operability)
 - [ ] Messaging layer: publisher/consumer contracts, retry, idempotency, outbox skeleton (operability)
 
@@ -146,7 +168,7 @@
 ## Фаза 13: Documentation
 
 - [ ] README.md (актуализация)
-- [ ] API documentation (Swagger/OpenAPI)
+- [ ] API documentation (Scalar UI + XML-комментарии)
 - [ ] Architecture decision records (ADR) — см. [`adr.md`](./adr.md)
 - [ ] Runbooks
 

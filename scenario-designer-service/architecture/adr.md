@@ -1,5 +1,11 @@
 # ADR — Architecture Decision Records
 
+| Поле       | Значение   |
+| ---------- | ---------- |
+| **Версия** | 1.3.0      |
+| **Статус** | Active     |
+| **Дата**   | 2026-07-01 |
+
 > Архитектурные решения, принятые в проекте. Каждое решение фиксирует контекст, решение и последствия.
 
 ---
@@ -167,8 +173,7 @@
 **Связанные документы:**
 
 - [`result-pattern.md`](./result-pattern.md) — документация библиотеки
-- [`observability.md`](./observability.md) — формат ответов (ProblemDetails)
-- [`testing.md`](./testing.md) — 47 тестов, покрытие 100%
+- [`testing.md`](./testing.md) — план тестирования
 
 ---
 
@@ -191,7 +196,7 @@
 - CNCF стандарт — совместим с Grafana, Prometheus, Jaeger, Zipkin, Datadog
 - Единый SDK для всех трёх сигналов (traces, metrics, logs)
 - HttpClient instrumentation автоматически коррелирует outgoing запросы
-- Runtime instrumentation даёт .NET метрики (GC, CPU,ThreadPool) из коробки
+- Runtime instrumentation даёт .NET метрики (GC, CPU, ThreadPool) из коробки
 - OTLP протокол — стандарт для OpenTelemetry Collector
 
 **Последствия:**
@@ -199,7 +204,7 @@
 - Точка сбора: OTel Collector (отдельный контейнер/сервис)
 - Логи дублируются: Serilog (application) + OTel (infra) — это осознанно
 - Фильтры OTel-логов: Microsoft/System → Warning (уменьшает шум)
-- Console exporter отключен даже в development ( Serilog покрывает)
+- Console exporter отключен даже в development (Serilog покрывает)
 - Корреляция с Correlation ID через Activity.Current
 
 **Связанные документы:**
@@ -247,7 +252,7 @@
 
 **Связанные документы:**
 
-- [`operability.md`](./operability .md) — раздел Exception Handler
+- [`operability.md`](./operability.md) — раздел Exception Handler
 
 ---
 
@@ -298,24 +303,22 @@
 - Assert: `await Assert.That(value).IsEqualTo(expected)` — нативный async
 - Скорость: быстрее xUnit/NUnit на больших тестовых suite
 - .NET 10: полная поддержка последнего runtime
-- Coverage: встроенный收集 через `--coverage` параметр
+- Coverage: встроенный сбор через `--coverage` параметр (Microsoft.Testing.Platform)
 
 **Последствия:**
 
-- 154 теста, покрытие 61.3% (line), 74.7% (branch)
 - HTML-отчёт через ReportGenerator
-- Отдельный test runner (не `dotnet test --filter`, а `--treenode-filter`)
+- Отдельный test runner (Microsoft.Testing.Platform, не VSTest)
 
 **Связанные документы:**
 
-- [`testing.md`](./testing.md) — полный список тестов,覆盖率
+- [`testing.md`](./testing.md) — полный список тестов, покрытие
 
 ---
 
 ## ADR-014: API Versioning (URL-based)
 
-**Статус:** Предложено  
-**Дата:** 2026-06-27
+**Статус:** Принято
 
 **Контекст:** API будет развиваться: новые поля, изменение контрактов, experimental endpoints. Нужен механизм совместимости с существующими клиентами при внесении изменений.
 
@@ -345,4 +348,173 @@
 
 - [`api.md`](./api.md) — эндпоинты с версиями
 - [`architecture.md`](./architecture.md) — регистрация сервисов
-- [`plan.md`](./plan.md) — задача в Фазе 0
+
+---
+
+## ADR-015: Scalar + Microsoft.AspNetCore.OpenApi для OpenAPI UI
+
+**Статус:** Принято
+
+**Контекст:** Нужен интерактивный UI для тестирования API в окружении Development с поддержкой JWT-авторизации. Требуется современное, быстрое решение, совместимое с .NET 10.
+
+**Рассмотренные альтернативы:**
+
+1. **Swashbuckle.AspNetCore** — популярная библиотека, но в версии 10.x возникли конфликты с Microsoft.OpenApi 3.x, проблемы с `AddSecurityRequirement`, `OperationFilter` не работал корректно.
+2. **Scalar + Microsoft.AspNetCore.OpenApi** — официальное решение Microsoft для .NET 10, современный UI, нет конфликтов версий.
+
+**Решение:** `Microsoft.AspNetCore.OpenApi` 10.0.9 + `Scalar.AspNetCore` 2.13.19.
+
+**Конфигурация (единый источник метаданных):**
+
+```csharp
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        // Метаданные из ApiMetadataOptions — единый источник истины
+        var meta = context.ApplicationServices
+            .GetRequiredService<IOptions<ApiMetadataOptions>>().Value;
+
+        document.Info.Title = meta.Title;
+        document.Info.Version = meta.Version;
+        document.Info.Description = meta.Description;
+        document.Info.Contact = new OpenApiContact
+        {
+            Name = meta.Developer.Name,
+            Email = meta.Developer.Email,
+            Url = new Uri(meta.Developer.Url)
+        };
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes = new Dictionary<string, IOpenApiSecurityScheme>
+        {
+            ["Bearer"] = new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                Description = "JWT токен для авторизации"
+            }
+        };
+
+        document.Security = new List<OpenApiSecurityRequirement>
+        {
+            new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer")] = new List<string>()
+            }
+        };
+
+        return Task.CompletedTask;
+    });
+});
+
+if (app.Environment.IsDevelopment())
+{
+    var meta = app.Services.GetRequiredService<IOptions<ApiMetadataOptions>>().Value;
+
+    app.MapOpenApi();  // /openapi/v1.json
+    app.MapScalarApiReference(options =>
+    {
+        options
+            .WithTitle(meta.Title)
+            .WithTheme(ScalarTheme.Saturn);
+    });  // /scalar/v1
+}
+```
+
+**Обоснование:**
+
+- Официальное решение Microsoft для .NET 10 — нет конфликтов версий
+- Scalar UI — современный, быстрый, красивый (альтернатива Swagger UI)
+- JWT Bearer схема встраивается через DocumentTransformer
+- XML-комментарии автоматически включаются через source generator
+- Работает только в Development (безопасность)
+- **Единый источник метаданных** — те же `ApiMetadataOptions` используются в OpenAPI, Scalar UI и `/api/metadata` (см. ADR-016)
+
+**Последствия:**
+
+- Endpoints: `/openapi/v1.json` (OpenAPI 3.1 документ), `/scalar/v1` (UI)
+- JWT-авторизация встроена в UI — кнопка Authorize
+- XML-документация генерируется автоматически (`GenerateDocumentationFile = true`)
+- Source generator `Microsoft.AspNetCore.OpenApi.SourceGenerators` включён по умолчанию
+- Не влияет на Production (условие `IsDevelopment()`)
+
+**Связанные документы:**
+
+- [`api.md`](./api.md) — эндпоинты
+- [`adr.md`](./adr.md) — ADR-016 (Metadata API)
+
+---
+
+## ADR-016: Публичный Metadata API Endpoint
+
+**Статус:** Принято
+
+**Контекст:** Нужен способ получения метаданных API (название, версия, описание, контакт разработчика) без аутентификации. Полезно для: автоматического документирования, мониторинга, интеграции с внешними системами, отображения версии API во фронтенде.
+
+**Рассмотренные альтернативы:**
+
+1. **OpenAPI JSON** (`/openapi/v1.json`) — содержит метаданные, но требует парсинга специфичного формата.
+2. **Health check endpoint** — не подходит, т.к. health checks на отдельном порту.
+3. **Отдельный `/api/metadata`** — простой JSON, читаемый любым клиентом.
+
+**Решение:** Публичный endpoint `GET /api/metadata` с ответом в формате JSON.
+
+**Конфигурация:**
+
+- Значения берутся из `ApiMetadataOptions` (appsettings.json) — единый источник с OpenAPI (ADR-015)
+- Не требует аутентификации (`.AllowAnonymous()`)
+- Кэширование: 1 час (`ResponseCache(Duration = 3600)`)
+- Endpoint виден в OpenAPI-документации
+
+**Обоснование:**
+
+- Публичные метаданные не являются секретом
+- Простой JSON без парсинга OpenAPI-схемы
+- Кэширование снижает нагрузку
+- Отдельный от health checks — разная семантика (метаданные vs состояние)
+- **Единый источник истины** — бэкенд (OpenAPI, Scalar) и фронтенд читают одни и те же данные из `appsettings.json`
+- Изменение конфигурации — все клиенты получают обновлённые метаданные (с задержкой кэша 1 час)
+
+**Последствия:**
+
+- Endpoint доступен без аутентификации
+- Значения конфигурируются через `appsettings.json`
+- Автоматически отражают текущую конфигурацию API
+- Фронтенд может запросить `/api/metadata` и отобразить название/версию API в UI
+- При изменении конфигурации — требуется restart приложения (т.к. используется `IOptions<T>`, а не `IOptionsMonitor<T>`)
+
+**Связанные документы:**
+
+- [`api.md`](./api.md) — секция Metadata API
+- [`operability.md`](./operability.md) — раздел Response Caching
+- [`adr.md`](./adr.md) — ADR-015 (Scalar + OpenAPI)
+
+---
+
+## Связанные документы
+
+- [`api.md`](./api.md)
+- [`architecture.md`](./architecture.md)
+- [`operability.md`](./operability.md)
+- [`observability.md`](./observability.md)
+- [`result-pattern.md`](./result-pattern.md)
+- [`testing.md`](./testing.md)
+- [`plan.md`](./plan.md)
+- [`TODO.md`](./TODO.md)
+
+---
+
+## Что изменилось в v1.3.0
+
+| Элемент          | Изменение                                                                                     |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| Версия документа | 1.2.0 → 1.3.0                                                                                 |
+| ADR-009          | Убрана устаревшая статистика "47 тестов, покрытие 100%"                                       |
+| ADR-013          | Уточнено: используется Microsoft.Testing.Platform (не VSTest)                                 |
+| ADR-015          | Обновлён пример кода: метаданные берутся из `IOptions<ApiMetadataOptions>`, а не захардкожены |
+| ADR-015          | Убраны избыточные связанные документы                                                         |
+| ADR-016          | Уточнено: `IOptions<T>` не поддерживает hot reload (требуется restart)                        |
+| ADR-016          | Уточнена формулировка про Swagger: endpoint виден в документации                              |
+| ADR-016          | Добавлена ссылка на ADR-015 (единый источник метаданных)                                      |

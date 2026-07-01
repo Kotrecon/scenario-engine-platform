@@ -49,7 +49,7 @@ Health checks: `http://localhost:8081` (внутренняя сеть)
 - [API](./architecture/api.md) — Эндпоинты, форматы, коды ошибок
 - [ADR](./architecture/adr.md) — Architecture Decision Records
 - [TODO](./architecture/TODO.md) — Все незавершённые задачи
-- [План тестирования](./architecture/testing-plan.md) — Статус тестов, покрытие
+- [План тестирования](./architecture/testing.md) — Статус тестов, покрытие
 
 ---
 

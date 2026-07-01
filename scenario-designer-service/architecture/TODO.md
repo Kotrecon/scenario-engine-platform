@@ -1,10 +1,20 @@
 # TODO — Общий файл задач
 
+| Поле       | Значение   |
+| ---------- | ---------- |
+| **Версия** | 1.3.0      |
+| **Статус** | Active     |
+| **Дата**   | 2026-07-02 |
+
+---
+
 ## Security
 
 - [ ] Secret management (Azure Key Vault / AWS Secrets Manager)
 - [ ] Data encryption at rest
 - [ ] Data encryption in transit
+- [x] Production-аудит: убедиться, что `/dev/token` не зарегистрирован в Production окружении
+- [ ] Удалить `/dev/token` endpoint после завершения отладки (см. [auth-flow.md](./auth-flow.md))
 
 ---
 
@@ -66,10 +76,6 @@
 
 - [ ] Интеграция с distributed tracing (OpenTelemetry)
 
-### Telemetry
-
-- [ ] Swagger/OpenAPI с JWT-авторизацией
-
 ---
 
 ## CORS
@@ -85,6 +91,24 @@
 ---
 
 ## API
+
+- [ ] Эндпоинты для управления сценариями
+- [ ] Эндпоинты для управления зонами оповещения
+- [ ] Эндпоинты для управления устройствами
+
+---
+
+## Testing
+
+### Интеграционные тесты
+
+- [ ] Health endpoints (`/health/live`, `/health/ready`, `/health`)
+- [x] JWT Authentication end-to-end (валидный токен → 200, невалидный → 401, expired → 401)
+- [x] Authorization policies (Admin/Operator/Auditor → правильные коды доступа)
+- [ ] Dev Token Endpoint — `/dev/token` возвращает валидный JWT, недоступен в Production (endpoint в Production не проверялся — см. Security)
+- [x] LoggingController end-to-end (через TestServer)
+- [x] Correlation ID (response header, incoming header прокидывается)
+- [x] Metadata endpoint (`/api/metadata` возвращает корректные данные)
 
 ---
 
@@ -126,3 +150,8 @@
 - [`observability.md`](./observability.md)
 - [`result-pattern.md`](./result-pattern.md)
 - [`api.md`](./api.md)
+- [`testing.md`](./testing.md)
+- [`architecture.md`](./architecture.md)
+- [`adr.md`](./adr.md)
+- [`plan.md`](./plan.md)
+- [`auth-flow.md`](./auth-flow.md)

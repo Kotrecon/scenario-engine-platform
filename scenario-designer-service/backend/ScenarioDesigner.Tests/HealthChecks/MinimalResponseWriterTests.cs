@@ -24,7 +24,6 @@ public class MinimalResponseWriterTests
         var json = JsonSerializer.Deserialize<JsonElement>(body);
 
         await Assert.That(json.GetProperty("status").GetString()).IsEqualTo("Healthy");
-        await Assert.That(context.Response.ContentType).IsEqualTo("application/json");
     }
 
     [Test]
@@ -127,5 +126,20 @@ public class MinimalResponseWriterTests
 
         await Assert.That(body).IsNotEmpty();
         await Assert.That(body.Length).IsGreaterThan(0);
+    }
+
+    [Test]
+    public async Task WriteAsync_SetsContentType_ApplicationJson()
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Response.Body = new MemoryStream();
+
+        var report = new HealthReport(
+            new Dictionary<string, HealthReportEntry>(),
+            TimeSpan.Zero);
+
+        await MinimalResponseWriter.WriteMinimal(httpContext, report);
+
+        await Assert.That(httpContext.Response.ContentType).IsEqualTo("application/json");
     }
 }

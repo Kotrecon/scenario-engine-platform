@@ -1,5 +1,11 @@
 # Operability — Эксплуатационная готовность сервиса
 
+| Поле       | Значение   |
+| ---------- | ---------- |
+| **Версия** | 1.1.0      |
+| **Статус** | Active     |
+| **Дата**   | 2026-07-01 |
+
 > Документ описывает, как сервис ведёт себя в продакшене: как его мониторят, как он перезапускается, как защищается от перегрузок и как обрабатывает ошибки. Предназначен для разработчиков, DevOps и SRE.
 
 ---
@@ -63,7 +69,7 @@ HTTP-эндпоинты, которые оркестратор (Kubernetes, Dock
 
 - Request/Response logging — НЕ видит запросов `/health/*`.
 - Correlation ID — НЕ видит запросов `/health/*`.
-- Swagger — НЕ документирует `/health/*`.
+- Scalar UI (OpenAPI) — НЕ документирует `/health/*`.
 - CORS — НЕ применяется к `/health/*`.
 - Exception handler — НЕ обрабатывает ошибки `/health/*`.
 
@@ -123,6 +129,46 @@ HTTP-эндпоинты, которые оркестратор (Kubernetes, Dock
 ### Текущее состояние
 
 - На health-ветку: 30 запросов за 10 секунд.
+
+---
+
+## 🗄️ Response Caching
+
+### Что это
+
+Middleware для кэширования HTTP-ответов на уровне сервера. Позволяет уменьшить нагрузку на API и ускорить ответ для клиентов. Работает через стандартные HTTP-заголовки:
+
+- `Cache-Control: public, max-age=3600` — кэшировать на 1 час.
+- `Age: 123` — сколько секунд ответ находится в кэше.
+- `Vary` — по каким заголовкам различать кэш (например, `Authorization`).
+
+**Зачем нужен:**
+
+- Снижение нагрузки на сервер (не выполнять тяжёлую логику повторно).
+- Ускорение ответа для клиентов (кэш отдаётся мгновенно).
+- Поддержка HTTP-кэширования на уровне CDN, прокси, браузера.
+
+### Как реализовано у нас
+
+- `builder.Services.AddResponseCaching()` — регистрация в DI.
+- `app.UseResponseCaching()` — middleware в pipeline (после Auth, до endpoints).
+- `/api/metadata` — кэшируется на 1 час через `[ResponseCache(Duration = 3600)]`.
+
+**Важно:** middleware стоит после `UseAuthentication()` и `UseAuthorization()`, чтобы не кэшировать ответы 401/403.
+
+### Текущее состояние
+
+- Middleware добавлен в pipeline.
+- `/api/metadata` кэшируется на 1 час (публичный endpoint, `AllowAnonymous`).
+- Для защищённых endpoints кэш не настроен — потребует `VaryByHeader = "Authorization"`.
+
+### Риски
+
+| Риск                                      | Митигация                                        |
+| ----------------------------------------- | ------------------------------------------------ |
+| Кэш отдаёт ответы 401/403                 | Middleware стоит после Auth                      |
+| Кэш смешивает ответы разных пользователей | Использовать `VaryByHeader = "Authorization"`    |
+| Кэш отдаёт устаревшие данные              | Настраивать `Duration` в зависимости от endpoint |
 
 ---
 
@@ -213,3 +259,191 @@ Exception handler НЕ обрабатывает ошибки `/health/*` — hea
 - `InvokeAsync_DoesNotLeakInternalDetails`.
 
 ---
+
+## ⚙️ Configuration
+
+### Что это
+
+Централизованная система конфигурации через Options-классы с DataAnnotations-валидацией. Все настройки загружаются из `appsettings.json`, валидируются при старте (fail-fast), и доступны через `IOptions<T>` в DI.
+
+**Зачем нужно:**
+
+- Единый источник истины для метаданных API (используется в OpenAPI, Scalar, `/api/metadata`).
+- Fail-fast: если конфигурация невалидна — приложение не стартует.
+- Типобезопасность: `IOptions<AppSettings>` вместо `IConfiguration["AppSettings:Port"]`.
+- Тестируемость: `IOptions<T>` легко мокается в unit-тестах.
+
+### Options-классы
+
+| Класс                  | Секция                  | Обязательные поля                      | Валидация                                                      |
+| ---------------------- | ----------------------- | -------------------------------------- | -------------------------------------------------------------- |
+| `AppSettings`          | `AppSettings`           | ServiceName, Port                      | `[Required]`, `[Range(1, 65535)]`                              |
+| `JwtOptions`           | `Jwt`                   | Key, Issuer, Audience                  | `[Required]`, `[MinLength(32)]` на Key                         |
+| `OpenTelemetryOptions` | `OpenTelemetry`         | Endpoint                               | `[Required]` на Endpoint                                       |
+| `ApiMetadataOptions`   | `ApiMetadata`           | Title, Version, Description, Developer | `[Required]`, `[StringLength]`, `[RegularExpression]` (semver) |
+| `ContactInfo`          | `ApiMetadata:Developer` | Name, Url                              | `[Required]`, `[StringLength]`, `[Url]`, `[EmailAddress]`      |
+
+### Валидация
+
+- **DataAnnotations** на properties: `[Required]`, `[Range]`, `[MinLength]`, `[StringLength]`, `[Url]`, `[EmailAddress]`, `[RegularExpression]`.
+- **`ValidateOnStart()`** — fail-fast при старте, если конфигурация невалидна.
+- **`ValidateDataAnnotations()`** — автоматическая проверка атрибутов.
+- **`ConfigurationExtensions`** — регистрация через `AddOptions<T>().Bind(section).ValidateDataAnnotations().ValidateOnStart()`.
+
+### Рекурсивная валидация (тесты)
+
+- Стандартный `Validator.TryValidateObject` **НЕ валидирует вложенные объекты** (известная проблема .NET).
+- `RecursiveValidator` (в тестах) — кастомный helper для проверки nested объектов (например, `Developer` внутри `ApiMetadataOptions`).
+- В production используется `ValidateOnStart()` — он рекурсивно проверяет все вложенные объекты автоматически.
+
+### Пример: `appsettings.json`
+
+```json
+{
+  "AppSettings": {
+    "ServiceName": "ScenarioDesigner",
+    "Port": 8080
+  },
+  "Jwt": {
+    "Key": "your-32-characters-secret-key-here!",
+    "Issuer": "ScenarioDesigner",
+    "Audience": "ScenarioDesigner"
+  },
+  "OpenTelemetry": {
+    "Endpoint": "http://localhost:4317",
+    "Protocol": "Grpc",
+    "UseConsoleExporter": false,
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning"
+    }
+  },
+  "ApiMetadata": {
+    "Title": "Scenario Designer API",
+    "Version": "1.0.0",
+    "Description": "API для управления сценариями оповещения",
+    "Developer": {
+      "Name": "ЛСО Team",
+      "Email": "lso@example.com",
+      "Url": "https://github.com/your-org/scenario-designer"
+    }
+  }
+}
+```
+
+### Fail-fast при старте
+
+В `Program.cs` проверяется наличие обязательных секций:
+
+```csharp
+if (!builder.AddAppSettings())
+{
+    Console.WriteLine("[FATAL] AppSettings section is required");
+    Log.Fatal("AppSettings section is required");
+    Environment.Exit(1);
+}
+```
+
+Если секция отсутствует — приложение завершается с кодом 1 до запуска хоста.
+
+### Тесты
+
+- `AppSettingsTests` (8 тестов) — валидация ServiceName и Port.
+- `JwtOptionsTests` (9 тестов) — валидация Key, Issuer, Audience.
+- `OpenTelemetryOptionsTests` (4 теста) — валидация Endpoint, defaults.
+- `ApiMetadataOptionsTests` (9 тестов) — валидация Title, Version, Description, Developer + nested.
+- `ContactInfoTests` (12 тестов) — валидация Name, Email, Url.
+- `ConfigurationExtensionsTests` (12 тестов) — регистрация Options, fail-fast.
+- `ObservabilityExtensionsTests` (5 тестов) — регистрация Serilog и OpenTelemetry.
+
+### Файлы
+
+- `Configuration/Options/AppSettings.cs`
+- `Configuration/Options/JwtOptions.cs`
+- `Configuration/Options/OpenTelemetryOptions.cs`
+- `Configuration/Options/ApiMetadataOptions.cs`
+- `Configuration/Options/ContactInfo.cs`
+- `Extensions/ConfigurationExtensions.cs`
+- `Extensions/ObservabilityExtensions.cs`
+
+---
+
+## 📋 Metadata API
+
+### Что это
+
+Публичный endpoint `GET /api/metadata`, который возвращает метаданные API: title, version, description, developer info. Используется фронтендом для отображения версии API, footer, about-страницы.
+
+### Зачем нужен
+
+- **Единый источник истины:** одни и те же метаданные используются в OpenAPI, Scalar UI, `/api/metadata`.
+- **Фронтенд получает данные через API:** не нужно хардкодить версию на клиенте.
+- **Меняется без перекомпиляции:** через `appsettings.json` или env vars.
+
+### Как реализовано
+
+```csharp
+app.MapGet("/api/metadata", (IOptions<ApiMetadataOptions> meta) =>
+{
+    var m = meta.Value;
+    return Results.Ok(new
+    {
+        m.Title,
+        m.Version,
+        m.Description,
+        Developer = new
+        {
+            m.Developer.Name,
+            m.Developer.Email,
+            m.Developer.Url
+        }
+    });
+})
+.WithName("GetApiMetadata")
+.WithTags("Metadata")
+.WithMetadata(new ResponseCacheAttribute { Duration = 3600 })
+.AllowAnonymous();
+```
+
+### Текущее состояние
+
+- Endpoint: `GET /api/metadata`
+- Аутентификация: `AllowAnonymous` (публичный).
+- Кэширование: 1 час (`ResponseCacheAttribute`).
+- Источник данных: `ApiMetadataOptions` (из `appsettings.json`).
+- Формат ответа: JSON с полями `title`, `version`, `description`, `developer`.
+
+### Безопасность
+
+| Риск                       | Уровень | Митигация                                     |
+| -------------------------- | ------- | --------------------------------------------- |
+| Раскрытие секретов         | Низкий  | Возвращаем только публичные метаданные        |
+| DDoS / перегрузка          | Средний | Rate limiting + Response caching              |
+| XSS через метаданные       | Низкий  | Фронтенд экранирует вывод (стандартно)        |
+| Несанкционированный доступ | Нет     | Эндпоинт публичный — метаданные API не секрет |
+
+### Пример ответа
+
+```json
+{
+  "title": "Scenario Designer API",
+  "version": "1.0.0",
+  "description": "API для управления сценариями оповещения",
+  "developer": {
+    "name": "ЛСО Team",
+    "email": "lso@example.com",
+    "url": "https://github.com/your-org/scenario-designer"
+  }
+}
+```
+
+---
+
+## Связанные документы
+
+- [`api.md`](./api.md) — HTTP-контракты, эндпоинты
+- [`observability.md`](./observability.md) — логирование, correlation ID, OpenTelemetry
+- [`adr.md`](./adr.md) — архитектурные решения (ADR-005 Health Checks, ADR-006 Rate Limiting, ADR-007 CORS, ADR-011 Exception Handler)
+- [`testing.md`](./testing.md) — план тестирования
+- [`auth-flow.md`](./auth-flow.md) — аутентификация и авторизация
+- [`TODO.md`](./TODO.md) — текущие задачи

@@ -17,7 +17,7 @@ namespace ScenarioDesigner.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-[Authorize(Policy = "AdminOnly")]
+[Authorize]
 public class LoggingController : ControllerBase
 {
     private readonly LoggingLevelSwitch _rootSwitch;
@@ -84,6 +84,7 @@ public class LoggingController : ControllerBase
     /// Все изменения логируются для аудита.
     /// </remarks>
     [HttpPut("level")]
+    [Authorize(Policy = "AdminOnly")]
     public IActionResult SetLevel([FromBody] SetLogLevelRequest request)
     {
         var validationResult = SetLogLevelValidator.Validate(request);

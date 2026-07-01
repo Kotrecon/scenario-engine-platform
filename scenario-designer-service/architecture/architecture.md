@@ -48,10 +48,9 @@ backend/
 ├── Contracts/
 │   ├── Dto/
 │   │   └── Request/
-│   │       ├── Logging/
-│   │       │   ├── SetLogLevelRequest.cs
-│   │       │   └── SetLogLevelValidator.cs
-│   │       └── Scenarios/
+│   │       └── Logging/
+│   │           ├── SetLogLevelRequest.cs
+│   │           └── SetLogLevelValidator.cs
 │   └── Result/
 │       ├── Common/
 │       │   ├── IError.cs
@@ -61,8 +60,7 @@ backend/
 │       │   ├── NotFoundError.cs
 │       │   ├── ConflictError.cs
 │       │   ├── ForbiddenError.cs
-│       │   ├── BusinessRuleError.cs
-│       │   └── ResultErrorMessages.cs
+│       │   └── BusinessRuleError.cs
 │       └── Web/
 │           └── ResultExtensions.cs
 ├── Controllers/
@@ -112,17 +110,31 @@ backend/
 │   ├── Controllers/
 │   │   ├── LoggingControllerTests.cs
 │   │   └── ApiVersioningTests.cs
-│   ├── HealthChecks/
-│   │   ├── MinimalResponseWriterTests.cs
-│   │   └── ReadinessHealthCheckTests.cs
-│   ├── Security/
-│   │   ├── AuthenticationExtensionsTests.cs
-│   │   └── AuthorizationExtensionsTests.cs
 │   ├── Extensions/
 │   │   ├── ConfigurationExtensionsTests.cs
 │   │   ├── ObservabilityExtensionsTests.cs
-│   │   └── Cors/
-│   │       └── CorsExtensionsTests.cs
+│   │   ├── Cors/
+│   │   │   └── CorsExtensionsTests.cs
+│   │   ├── CorrelationId/
+│   │   │   └── CorrelationIdMiddlewareTests.cs
+│   │   ├── ExceptionHandler/
+│   │   │   └── ExceptionHandlerMiddlewareTests.cs
+│   │   └── RequestResponseLogging/
+│   │       └── RequestResponseLoggingMiddlewareTests.cs
+│   ├── HealthChecks/
+│   │   ├── MinimalResponseWriterTests.cs
+│   │   └── ReadinessHealthCheckTests.cs
+│   ├── Integration/
+│   │   ├── Infrastructure/
+│   │   │   └── TestWebApplicationFactory.cs
+│   │   ├── AuthenticationTests.cs
+│   │   ├── AuthorizationTests.cs
+│   │   ├── DevTokenEndpointTests.cs
+│   │   ├── CorrelationIdE2ETests.cs
+│   │   └── MetadataEndpointTests.cs
+│   ├── Security/
+│   │   ├── AuthenticationExtensionsTests.cs
+│   │   └── AuthorizationExtensionsTests.cs
 │   └── Helpers/
 │       └── RecursiveValidator.cs
 ├── Program.cs
@@ -262,6 +274,7 @@ backend/
 - [`operability.md`](./operability.md) — Health Checks, Graceful Shutdown, Rate Limiting, CORS, Exception Handler, Response Caching
 - [`observability.md`](./observability.md) — Логирование (Serilog), Request/Response Logging, OpenTelemetry
 - [`adr.md`](./adr.md) — Architecture Decision Records
+- [`auth-flow.md`](./auth-flow.md) — Аутентификация и авторизация, политики, известные баги
 - [`TODO.md`](./TODO.md) — Все незавершённые задачи
 
 ---

@@ -501,6 +501,7 @@ if (app.Environment.IsDevelopment())
 - [`observability.md`](./observability.md)
 - [`result-pattern.md`](./result-pattern.md)
 - [`testing.md`](./testing.md)
+- [`auth-flow.md`](./auth-flow.md)
 - [`plan.md`](./plan.md)
 - [`TODO.md`](./TODO.md)
 

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
@@ -254,20 +255,22 @@ try
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var claims = new Dictionary<string, object>
+            var claims = new List<System.Security.Claims.Claim>
             {
-                [System.Security.Claims.ClaimTypes.Name] = req.Username,
+                new System.Security.Claims.Claim("name", req.Username),
+                new System.Security.Claims.Claim("sub", req.Username)
             };
 
-            var roles = new List<string>(req.Roles);
-            if (roles.Count > 0)
-                claims[System.Security.Claims.ClaimTypes.Role] = roles.Count == 1 ? roles[0] : roles;
+            foreach (var role in req.Roles)
+            {
+                claims.Add(new System.Security.Claims.Claim("role", role));
+            }
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = builder.Configuration["Jwt:Issuer"],
-                Audience = builder.Configuration["Jwt:Audience"],
-                Claims = claims,
+                Issuer = builder.Configuration["Jwt:Issuer"] ?? "ScenarioDesigner",
+                Audience = builder.Configuration["Jwt:Audience"] ?? "ScenarioDesigner",
+                Subject = new System.Security.Claims.ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddHours(8),
                 SigningCredentials = creds
             };
@@ -303,3 +306,8 @@ finally
 // ОБЪЯВЛЕНИЯ ТИПОВ — СТРОГО В КОНЦЕ ФАЙЛА!
 // ============================================================================
 public record DevTokenRequest(string Username, string[] Roles);
+
+// ============================================================================
+// ПОЛУЧАСТЬ ДЛЯ WebApplicationFactory<Program>
+// ============================================================================
+public partial class Program { }

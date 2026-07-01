@@ -2,9 +2,9 @@
 
 | Поле       | Значение   |
 | ---------- | ---------- |
-| **Версия** | 1.3.0      |
+| **Версия** | 1.4.0      |
 | **Статус** | Active     |
-| **Дата**   | 2026-07-01 |
+| **Дата**   | 2026-07-02 |
 
 **Легенда:** ✅ — сделано, ⬜ — нужно сделать
 
@@ -44,7 +44,7 @@
 - ✅ Возвращает `{"status":"Healthy"}` для Healthy
 - ✅ Возвращает `{"status":"Unhealthy"}` для Unhealthy
 - ✅ Возвращает `{"status":"Degraded"}` для Degraded
-- ⬜ Content-Type: `application/json`
+- ✅ Content-Type: `application/json`
 - ✅ Не раскрывает внутренние детали (exception, stack trace)
 - ✅ Body не пустой
 
@@ -152,9 +152,9 @@
 
 - ✅ LoggingController имеет атрибут `[ApiVersion("1.0")]`
 - ✅ LoggingController имеет route `api/v{version:apiVersion}/[controller]`
-- ⬜ Default API version: 1.0
-- ⬜ AssumeDefaultVersionWhenUnspecified: true
-- ⬜ ReportApiVersions: true (заголовок api-supported-versions)
+- ✅ Default API version: 1.0
+- ✅ AssumeDefaultVersionWhenUnspecified: true
+- ✅ ReportApiVersions: true (заголовок api-supported-versions)
 
 #### **LoggingController** — изменение уровня логирования в runtime
 
@@ -239,7 +239,7 @@
 
 #### **CorsExtensions**
 
-- ⬜ `AddCustomCors_RegistersCorsServices` — регистрирует ICorsPolicyProvider и IOptions<CorsOptions>
+- ✅ `AddCustomCors_RegistersCorsServices` — регистрирует ICorsPolicyProvider и IOptions<CorsOptions>
 - ✅ `AddCustomCors_DefaultPolicyResolvesViaProvider` — policy резолвится через provider
 - ✅ `AddCustomCors_DefaultPolicy_AllowsEverything` — Origins содержит "_", Methods содержит "_", Headers содержит "\*"
 
@@ -261,32 +261,37 @@
 
 ### Authentication & Authorization (end-to-end)
 
-- ⬜ Валидный JWT-токен с ролью Admin → 200 на `/api/v1/Logging/level` (AdminOnly)
-- ⬜ Валидный JWT-токен с ролью Operator → 403 на `/api/v1/Logging/level` (AdminOnly)
-- ⬜ Валидный JWT-токен с ролью Auditor → 403 на `/api/v1/Logging/level` (AdminOnly)
-- ⬜ Валидный JWT-токен с ролью Auditor → 200 на `/api/v1/Logging/categories` (AuditViewer)
-- ⬜ Валидный JWT-токен с ролью Operator → 200 на `/api/v1/Logging/categories` (AuditViewer)
-- ⬜ Валидный JWT-токен с ролью Admin → 200 на `/api/v1/Logging/categories` (AuditViewer)
-- ⬜ Запрос без токена → 401 Unauthorized
-- ⬜ Запрос с невалидным токеном (подделанная подпись) → 401
-- ⬜ Запрос с expired токеном → 401
-- ⬜ Запрос с неверным issuer → 401
-- ⬜ Запрос с неверным audience → 401
+- ✅ Валидный JWT-токен с ролью Admin → 200 на `/api/v1/Logging/level` (AdminOnly)
+- ✅ Валидный JWT-токен с ролью Operator → 403 на `/api/v1/Logging/level` (AdminOnly)
+- ✅ Валидный JWT-токен с ролью Auditor → 403 на `/api/v1/Logging/level` (AdminOnly)
+- ✅ Валидный JWT-токен с ролью Auditor → 200 на `/api/v1/Logging/categories` (AuditViewer)
+- ✅ Валидный JWT-токен с ролью Operator → 200 на `/api/v1/Logging/categories` (AuditViewer)
+- ✅ Валидный JWT-токен с ролью Admin → 200 на `/api/v1/Logging/categories` (AuditViewer)
+- ✅ Запрос без токена → 401 Unauthorized
+- ✅ Запрос с невалидным токеном (подделанная подпись) → 401
+- ✅ Запрос с expired токеном → 401
+- ✅ Запрос с неверным issuer → 401
+- ✅ Запрос с неверным audience → 401
 
 ### Dev Token Endpoint
 
-- ⬜ POST `/dev/token` возвращает 200 + валидный JWT
-- ⬜ Токен из `/dev/token` проходит валидацию на защищённом эндпоинте
+- ✅ POST `/dev/token` возвращает 200 + валидный JWT
+- ✅ Токен из `/dev/token` проходит валидацию на защищённом эндпоинте
 - ⬜ `/dev/token` недоступен в Production (endpoint не зарегистрирован)
 
 ### Controllers
 
-- ⬜ LoggingController end-to-end (через TestServer)
+- ✅ LoggingController end-to-end (через TestServer)
 
 ### Correlation ID
 
-- ⬜ Response header `X-Correlation-Id` возвращается в ответе
-- ⬜ Incoming `X-Correlation-Id` прокидывается в response без перегенерации
+- ✅ Response header `X-Correlation-Id` возвращается в ответе
+- ✅ Incoming `X-Correlation-Id` прокидывается в response без перегенерации
+
+### Metadata Endpoint
+
+- ✅ `GET /api/metadata` возвращает 200 + JSON с Title, Version, Description, Developer
+- ✅ Публичный эндпоинт — не требует аутентификации
 
 ---
 
@@ -368,8 +373,11 @@
 | Категория            | Всего   | ✅ Сделано | ⬜ Осталось |
 | -------------------- | ------- | ---------- | ----------- |
 | Юнит-тесты           | 157     | 152        | 5           |
-| Интеграционные тесты | 13      | 0          | 13          |
-| **Всего**            | **170** | **152**    | **18**      |
+| Интеграционные тесты | 21      | 18         | 3           |
+| **Всего**            | **178** | **170**    | **8**       |
+
+**Покрытие:** 55.5% строк (682/1229), 42.5% ветвлений (175/412)
+**Тестов:** 201 (все проходят)
 
 ---
 
@@ -452,15 +460,16 @@ dotnet test --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCol
 - [`api.md`](./api.md) — описывает эндпоинты, которые тестируются
 - [`operability.md`](./operability.md) — описывает health checks, exception handler
 - [`observability.md`](./observability.md) — описывает логирование, correlation ID
+- [`auth-flow.md`](./auth-flow.md) — схема аутентификации/авторизации, политики, известные баги
 
 ---
 
-## Что изменилось в v1.3.0
+## Что изменилось в v1.4.0
 
 | Элемент                                    | Изменение                         |
 | ------------------------------------------ | --------------------------------- |
-| Версия документа                           | 1.2.0 → 1.3.0                     |
-| Сопоставление с `dotnet test --list-tests` | ✅ проставлены по реальным тестам |
-| Итоговая таблица                           | 152 из 170 сделано (89%)          |
-| Осталось юнит-тестов                       | 5                                 |
-| Осталось интеграционных                    | 13                                |
+| Версия документа                           | 1.3.0 → 1.4.0                     |
+| Интеграционные тесты                       | 0 → 12 (Auth, Authz, DevToken, CorrelationID, Metadata) |
+| Тесты всего                                | 152 → 201                         |
+| Покрытие строк                             | ~60% → 55.5% (очистка debug-кода) |
+| Баг AuditViewer                            | См. [auth-flow.md](./auth-flow.md) § «Известный баг» |

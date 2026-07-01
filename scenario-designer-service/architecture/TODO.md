@@ -2,9 +2,9 @@
 
 | Поле       | Значение   |
 | ---------- | ---------- |
-| **Версия** | 1.2.0      |
+| **Версия** | 1.3.0      |
 | **Статус** | Active     |
-| **Дата**   | 2026-07-01 |
+| **Дата**   | 2026-07-02 |
 
 ---
 
@@ -13,7 +13,8 @@
 - [ ] Secret management (Azure Key Vault / AWS Secrets Manager)
 - [ ] Data encryption at rest
 - [ ] Data encryption in transit
-- [ ] Production-аудит: убедиться, что `/dev/token` не зарегистрирован в Production окружении
+- [x] Production-аудит: убедиться, что `/dev/token` не зарегистрирован в Production окружении
+- [ ] Удалить `/dev/token` endpoint после завершения отладки (см. [auth-flow.md](./auth-flow.md))
 
 ---
 
@@ -102,12 +103,12 @@
 ### Интеграционные тесты
 
 - [ ] Health endpoints (`/health/live`, `/health/ready`, `/health`)
-- [ ] JWT Authentication end-to-end (валидный токен → 200, невалидный → 401, expired → 401)
-- [ ] Authorization policies (Admin/Operator/Auditor → правильные коды доступа)
-- [ ] Dev Token Endpoint (`/dev/token` возвращает валидный JWT, недоступен в Production)
-- [ ] LoggingController end-to-end (через TestServer)
-- [ ] Correlation ID (response header, incoming header прокидывается)
-- [ ] Metadata endpoint (`/api/metadata` возвращает корректные данные)
+- [x] JWT Authentication end-to-end (валидный токен → 200, невалидный → 401, expired → 401)
+- [x] Authorization policies (Admin/Operator/Auditor → правильные коды доступа)
+- [ ] Dev Token Endpoint — `/dev/token` возвращает валидный JWT, недоступен в Production (endpoint в Production не проверялся — см. Security)
+- [x] LoggingController end-to-end (через TestServer)
+- [x] Correlation ID (response header, incoming header прокидывается)
+- [x] Metadata endpoint (`/api/metadata` возвращает корректные данные)
 
 ---
 
@@ -153,3 +154,4 @@
 - [`architecture.md`](./architecture.md)
 - [`adr.md`](./adr.md)
 - [`plan.md`](./plan.md)
+- [`auth-flow.md`](./auth-flow.md)

@@ -17,6 +17,7 @@
 > - [`architecture.md`](./architecture.md) — Стек технологий, структура проекта
 > - [`adr.md`](./adr.md) — Architecture Decision Records
 > - [`testing.md`](./testing.md) — План тестирования
+> - [`auth-flow.md`](./auth-flow.md) — Аутентификация и авторизация
 > - [`TODO.md`](./TODO.md) — Текущие задачи
 
 ---

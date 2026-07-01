@@ -1,5 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using ScenarioDesigner.Controllers;
 
 namespace ScenarioDesigner.Tests.Controllers;
@@ -24,5 +26,56 @@ public class ApiVersioningTests
 
         await Assert.That(routeAttribute).IsNotNull();
         await Assert.That(routeAttribute!.Template).IsEqualTo("api/v{version:apiVersion}/[controller]");
+    }
+
+    [Test]
+    public async Task ApiVersioning_DefaultVersion_Is1_0()
+    {
+        var services = new ServiceCollection();
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+        });
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<ApiVersioningOptions>>().Value;
+
+        await Assert.That(options.DefaultApiVersion).IsEqualTo(new ApiVersion(1, 0));
+    }
+
+    [Test]
+    public async Task ApiVersioning_AssumeDefaultVersionWhenUnspecified_IsTrue()
+    {
+        var services = new ServiceCollection();
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+        });
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<ApiVersioningOptions>>().Value;
+
+        await Assert.That(options.AssumeDefaultVersionWhenUnspecified).IsTrue();
+    }
+
+    [Test]
+    public async Task ApiVersioning_ReportApiVersions_IsTrue()
+    {
+        var services = new ServiceCollection();
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+        });
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<ApiVersioningOptions>>().Value;
+
+        await Assert.That(options.ReportApiVersions).IsTrue();
     }
 }

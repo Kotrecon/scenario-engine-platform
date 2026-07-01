@@ -445,4 +445,5 @@ app.MapGet("/api/metadata", (IOptions<ApiMetadataOptions> meta) =>
 - [`observability.md`](./observability.md) — логирование, correlation ID, OpenTelemetry
 - [`adr.md`](./adr.md) — архитектурные решения (ADR-005 Health Checks, ADR-006 Rate Limiting, ADR-007 CORS, ADR-011 Exception Handler)
 - [`testing.md`](./testing.md) — план тестирования
+- [`auth-flow.md`](./auth-flow.md) — аутентификация и авторизация
 - [`TODO.md`](./TODO.md) — текущие задачи

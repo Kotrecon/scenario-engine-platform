@@ -484,3 +484,4 @@ GET /health
 - [`observability.md`](./observability.md) — Логирование, OpenTelemetry
 - [`result-pattern.md`](./result-pattern.md) — Result Pattern библиотека, формат ошибок
 - [`architecture.md`](./architecture.md) — Стек технологий, структура проекта, безопасность
+- [`auth-flow.md`](./auth-flow.md) — Аутентификация и авторизация, политики

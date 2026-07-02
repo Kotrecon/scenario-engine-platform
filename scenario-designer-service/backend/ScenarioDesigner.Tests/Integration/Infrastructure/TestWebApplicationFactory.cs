@@ -17,8 +17,20 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
     public const string TestJwtIssuer = "ScenarioDesigner";
     public const string TestJwtAudience = "ScenarioDesigner";
 
+    private readonly Dictionary<string, string?>? _additionalConfig;
+
+    public TestWebApplicationFactory(Dictionary<string, string?>? additionalConfig = null)
+    {
+        _additionalConfig = additionalConfig;
+    }
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        if (_additionalConfig != null && _additionalConfig.TryGetValue("ASPNETCORE_ENVIRONMENT", out var env))
+        {
+            builder.UseEnvironment(env!);
+        }
+
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
@@ -36,6 +48,11 @@ public class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["OpenTelemetry:Endpoint"] = "http://localhost:4317",
                 ["ASPNETCORE_ENVIRONMENT"] = "Development"
             });
+
+            if (_additionalConfig != null)
+            {
+                config.AddInMemoryCollection(_additionalConfig);
+            }
         });
 
         builder.ConfigureServices(services =>

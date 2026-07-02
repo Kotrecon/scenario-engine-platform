@@ -20,22 +20,22 @@
 
 ## Политики
 
-| Политика      | Требуемые роли          | Эндпоинты                     |
-| ------------- | ----------------------- | ----------------------------- |
-| Default       | Любая аутентификация    | Все защищённые                 |
-| AdminOnly     | Admin                   | `PUT /api/v{v}/logging/level` |
-| Operator      | Admin, Operator         | (зарезервировано)             |
-| AuditViewer   | Admin, Operator, Auditor | `GET /api/v{v}/logging/level`, `GET /api/v{v}/logging/categories` |
+| Политика    | Требуемые роли           | Эндпоинты                                                         |
+| ----------- | ------------------------ | ----------------------------------------------------------------- |
+| Default     | Любая аутентификация     | Все защищённые                                                    |
+| AdminOnly   | Admin                    | `PUT /api/v{v}/logging/level`                                     |
+| Operator    | Admin, Operator          | (зарезервировано)                                                 |
+| AuditViewer | Admin, Operator, Auditor | `GET /api/v{v}/logging/level`, `GET /api/v{v}/logging/categories` |
 
 ---
 
 ## Claim types
 
-| Claim        | Значение в JWT               | Роль в claims  |
-| ------------ | ----------------------------- | -------------- |
-| Name         | `http://.../claims/name`      | имя пользователя |
-| NameIdentifier | `http://.../claims/nameidentifier` | ID пользователя |
-| Role         | `http://.../claims/role`      | роль (Admin, Operator, Auditor) |
+| Claim          | Значение в JWT                     | Роль в claims                   |
+| -------------- | ---------------------------------- | ------------------------------- |
+| Name           | `http://.../claims/name`           | имя пользователя                |
+| NameIdentifier | `http://.../claims/nameidentifier` | ID пользователя                 |
+| Role           | `http://.../claims/role`           | роль (Admin, Operator, Auditor) |
 
 Важно: `RoleClaimType` и `NameClaimType` настроены в `TokenValidationParameters` на длинные URI (`ClaimTypes.Role`, `ClaimTypes.Name`). Это обеспечивает совместимость между `JwtSecurityTokenHandler` (тесты) и `JsonWebTokenHandler` (сервер).
 
@@ -46,6 +46,7 @@
 **Уровень класса:** `[Authorize]` — требует аутентификации, но не конкретной роли.
 
 **Уровень метода:**
+
 - `PUT /level` — `[Authorize(Policy = "AdminOnly")]` — только Admin
 - `GET /level` — `[Authorize(Policy = "AuditViewer")]` — Admin, Operator, Auditor
 - `GET /categories` — `[Authorize(Policy = "AuditViewer")]` — Admin, Operator, Auditor

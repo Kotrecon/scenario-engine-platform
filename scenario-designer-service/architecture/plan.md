@@ -2,9 +2,9 @@
 
 | Поле       | Значение   |
 | ---------- | ---------- |
-| **Версия** | 1.2.0      |
+| **Версия** | 1.3.0      |
 | **Статус** | Active     |
-| **Дата**   | 2026-07-01 |
+| **Дата**   | 2026-07-02 |
 
 > Дорожная карта проекта с разбивкой на фазы.
 >
@@ -29,7 +29,7 @@
 - [x] Request/Response logging middleware
 - [x] Correlation ID middleware
 - [x] CORS policy
-- [x] Result Pattern библиотека (179 тестов, подробнее: [`result-pattern.md`](./result-pattern.md))
+- [x] Result Pattern библиотека (подробнее: [`result-pattern.md`](./result-pattern.md))
 - [x] ProblemDetails layer (RFC 7807) — интеграция с Result Pattern
 - [x] API Versioning (Asp.Versioning.Mvc, URL-based, подробнее: [`api.md`](./api.md))
 - [x] OpenAPI + Scalar UI с JWT-авторизацией (Microsoft.AspNetCore.OpenApi 10.0.9 + Scalar 2.13.19, подробнее: [`adr.md`](./adr.md) ADR-015)
@@ -40,7 +40,8 @@
 - [x] `ConfigurationExtensions` — регистрация Options через `AddOptions<T>().Bind().ValidateDataAnnotations().ValidateOnStart()`
 - [x] `ObservabilityExtensions` — `AddCustomLogging` (Serilog) + `AddCustomOpenTelemetry` (OTLP)
 - [x] Response caching middleware (`AddResponseCaching()` + `UseResponseCaching()`)
-- [x] Authentication/Authorization middleware в pipeline (`UseAuthentication()` + `UseAuthorization()`)
+- [x] JWT Authentication + Authorization (пolicies: AdminOnly, Operator, AuditViewer, подробнее: [`auth-flow.md`](./auth-flow.md))
+- [x] Интеграционные тесты: Authentication, Authorization, DevToken, CorrelationID, Metadata (подробнее: [`testing.md`](./testing.md))
 - [x] Unit-тесты Configuration DTO (AppSettings, JwtOptions, OpenTelemetryOptions, ApiMetadataOptions, ContactInfo)
 - [x] Unit-тесты ConfigurationExtensions (12 тестов)
 - [x] Unit-тесты ObservabilityExtensions (5 тестов)
@@ -184,3 +185,13 @@
 5. **Контракты с другими сервисами — когда они появятся** (Фаза 11)
 6. **Docker и CI/CD — когда понадобятся**, не сейчас
 7. **Result Pattern для всех бизнес-операций**: типобезопасная обработка ошибок без исключений (см. [`result-pattern.md`](./result-pattern.md))
+
+---
+
+## Что изменилось в v1.3.0
+
+| Элемент          | Изменение                                                                 |
+| ---------------- | ------------------------------------------------------------------------- |
+| Версия документа | 1.2.0 → 1.3.0                                                             |
+| Phase 0          | Убрано "179 тестов", добавлены JWT Auth и интеграционные тесты            |
+| Phase 0          | Добавлена ссылка на `auth-flow.md`                                        |

@@ -66,4 +66,22 @@ public class DevTokenEndpointTests
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
     }
+
+    [Test]
+    public async Task DevToken_NotAvailable_InProduction()
+    {
+        var factory = new TestWebApplicationFactory(new Dictionary<string, string?>
+        {
+            ["ASPNETCORE_ENVIRONMENT"] = "Production"
+        });
+        var client = factory.CreateClient();
+
+        var response = await client.PostAsJsonAsync("/dev/token", new
+        {
+            username = "admin",
+            roles = new[] { "Admin" }
+        });
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.NotFound);
+    }
 }

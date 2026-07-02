@@ -5,6 +5,7 @@
 ```
 scenario-engine-platform/
 ├── global.json                    # Test runner config
+├── step.md                        # Agent workflow rules
 ├── scenario-designer-service/
 │   ├── README.md                  # Main docs
 │   ├── architecture/              # All architecture docs
@@ -41,7 +42,7 @@ reportgenerator -reports:"ScenarioDesigner.Tests/bin/Debug/net10.0/TestResults/*
 - **TUnit** 1.56.35 (NOT xUnit, NOT NUnit)
 - **Moq** 4.20.72 for mocking
 - Coverage: Microsoft.Testing.Extensions.CodeCoverage
-- 156 tests, ~60% line coverage
+- 202 tests, 55.5% line coverage
 
 ### Test Conventions
 
@@ -71,17 +72,21 @@ public async Task MethodName_WhenCondition_ExpectedResult()
 
 4. **Two ports**: API (8080), Health checks (8081)
 
+5. **Authorization**: `[Authorize]` on class = authentication only, `[Authorize(Policy = "...")]` on method = role check. AND-logic applies if both present. See `auth-flow.md`.
+
 ## Documentation
 
 All docs in `scenario-designer-service/architecture/`:
 - `architecture.md` — Tech stack, project structure
 - `plan.md` — Development roadmap (14 phases)
 - `testing.md` — Test inventory and coverage
-- `adr.md` — Architecture Decision Records (14 ADRs)
+- `adr.md` — Architecture Decision Records (14+ ADRs)
 - `TODO.md` — Remaining tasks
 - `api.md` — API endpoints
 - `observability.md` — Logging, Correlation ID, OpenTelemetry
-- `operability .md` — Health checks, Graceful Shutdown, Rate Limiting
+- `operability.md` — Health checks, Graceful Shutdown, Rate Limiting
+- `auth-flow.md` — JWT auth flow, policies, known bugs
+- `deployment.md` — Docker, Kubernetes, env vars, secrets
 - `result-pattern.md` — Result Pattern library docs
 
 ## Common Pitfalls
@@ -92,6 +97,7 @@ All docs in `scenario-designer-service/architecture/`:
 4. **Coverage must be verified** — run actual tools, never claim numbers
 5. **TODO.md**: Delete completed items, don't mark with [x]
 6. **OpenApi namespace**: Swashbuckle 10.2.3 uses OpenApi 2.7.5 — types are in `Microsoft.OpenApi`, NOT `Microsoft.OpenApi.Models`
+7. **JWT test factory**: `JwtSecurityTokenHandler` needs `OutboundClaimTypeMap.Clear()` for long claim URIs
 
 ## Skills
 
@@ -107,6 +113,7 @@ All docs in `scenario-designer-service/architecture/`:
 - [x] CORS
 - [x] Result Pattern + ProblemDetails
 - [x] API Versioning
-- [ ] Swagger/OpenAPI (in progress — build broken, OpenApi namespace issue)
+- [x] JWT Authentication + Authorization (policies, integration tests)
+- [x] OpenAPI/Scalar UI
 - [ ] Persistence layer (EF Core)
 - [ ] Messaging layer (RabbitMQ/Kafka)

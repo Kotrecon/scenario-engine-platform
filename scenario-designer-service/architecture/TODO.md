@@ -2,18 +2,20 @@
 
 | Поле       | Значение   |
 | ---------- | ---------- |
-| **Версия** | 1.3.0      |
+| **Версия** | 1.4.0      |
 | **Статус** | Active     |
 | **Дата**   | 2026-07-02 |
+
+> При закрытии задачи — удалять из секций, фиксировать в таблице изменений в конце файла.
 
 ---
 
 ## Security
 
 - [ ] Secret management (Azure Key Vault / AWS Secrets Manager)
+- [ ] Jwt:Key коммитится в appsettings.json — production ключ хранить только через env var / secret store
 - [ ] Data encryption at rest
 - [ ] Data encryption in transit
-- [x] Production-аудит: убедиться, что `/dev/token` не зарегистрирован в Production окружении
 - [ ] Удалить `/dev/token` endpoint после завершения отладки (см. [auth-flow.md](./auth-flow.md))
 
 ---
@@ -103,12 +105,6 @@
 ### Интеграционные тесты
 
 - [ ] Health endpoints (`/health/live`, `/health/ready`, `/health`)
-- [x] JWT Authentication end-to-end (валидный токен → 200, невалидный → 401, expired → 401)
-- [x] Authorization policies (Admin/Operator/Auditor → правильные коды доступа)
-- [ ] Dev Token Endpoint — `/dev/token` возвращает валидный JWT, недоступен в Production (endpoint в Production не проверялся — см. Security)
-- [x] LoggingController end-to-end (через TestServer)
-- [x] Correlation ID (response header, incoming header прокидывается)
-- [x] Metadata endpoint (`/api/metadata` возвращает корректные данные)
 
 ---
 
@@ -155,3 +151,13 @@
 - [`adr.md`](./adr.md)
 - [`plan.md`](./plan.md)
 - [`auth-flow.md`](./auth-flow.md)
+- [`deployment.md`](./deployment.md)
+
+---
+
+## Таблица изменений
+
+| Версия | Дата       | Закрытые задачи |
+| ------ | ---------- | --------------- |
+| 1.4.0  | 2026-07-02 | Production-аудит `/dev/token`, `appsettings.Production.json`, `deployment.md`, JWT Authentication, Authorization policies, Dev Token Endpoint (включая Production), LoggingController E2E, Correlation ID, Metadata endpoint |
+| 1.3.0  | 2026-07-01 | Health checks, Exception Handler, Request/Response Logging, Correlation ID, CORS, Result Pattern, API Versioning, OpenAPI/Scalar UI, Configuration DTO + Options, ObservabilityExtensions, ConfigurationExtensions, Coverlet |

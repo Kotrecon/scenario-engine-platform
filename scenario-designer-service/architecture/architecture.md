@@ -2,9 +2,9 @@
 
 | Поле       | Значение   |
 | ---------- | ---------- |
-| **Версия** | 1.2.0      |
+| **Версия** | 1.3.0      |
 | **Статус** | Active     |
-| **Дата**   | 2026-07-01 |
+| **Дата**   | 2026-07-02 |
 
 ---
 
@@ -141,7 +141,8 @@ backend/
 ├── ScenarioDesigner.csproj
 ├── ScenarioDesigner.Tests.csproj
 ├── appsettings.json
-└── appsettings.Development.json
+├── appsettings.Development.json
+└── appsettings.Production.json
 ```
 
 ---
@@ -158,19 +159,18 @@ backend/
 3.  builder.AddJwt() — IOptions<JwtOptions> + ValidateOnStart
 4.  builder.AddApiMetadata() — IOptions<ApiMetadataOptions> + ValidateOnStart
 5.  builder.AddOpenTelemetryOptions() — IOptions<OpenTelemetryOptions> + ValidateOnStart
-6.  builder.AddOpenTelemetryOptions() — OTel logs/traces/metrics
-7.  builder.AddCustomOpenTelemetry() — OTel pipeline
-8.  builder.AddCustomAuthentication() — JWT Bearer
-9.  builder.AddCustomAuthorization() — Policy-based
-10. builder.Services.AddApiVersioning() — URL-based versioning (v1)
-11. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
-12. builder.Services.AddCustomExceptionHandler() — Exception Handler
-13. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
-14. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
-15. builder.Services.AddCustomHealthChecks() — health checks DI
-16. builder.Services.AddCustomRateLimiting() — rate limiter DI
-17. builder.Services.AddResponseCaching() — response caching
-18. builder.Services.AddOpenApi() — OpenAPI 3.1 документ + JWT Bearer схема
+6.  builder.AddCustomOpenTelemetry() — OTel logs/traces/metrics pipeline
+7.  builder.AddCustomAuthentication() — JWT Bearer
+8.  builder.AddCustomAuthorization() — Policy-based
+9.  builder.Services.AddApiVersioning() — URL-based versioning (v1)
+10. builder.Services.AddCustomCors() — CORS (AllowAll для разработки)
+11. builder.Services.AddCustomExceptionHandler() — Exception Handler
+12. builder.Services.AddCustomCorrelationId() — Correlation ID (Guid.CreateVersion7)
+13. builder.Services.AddCustomRequestResponseLogging() — Request/Response logging
+14. builder.Services.AddCustomHealthChecks() — health checks DI
+15. builder.Services.AddCustomRateLimiting() — rate limiter DI
+16. builder.Services.AddResponseCaching() — response caching
+17. builder.Services.AddOpenApi() — OpenAPI 3.1 документ + JWT Bearer схема
 ```
 
 ### Middleware Pipeline (порядок выполнения)
@@ -275,6 +275,7 @@ backend/
 - [`observability.md`](./observability.md) — Логирование (Serilog), Request/Response Logging, OpenTelemetry
 - [`adr.md`](./adr.md) — Architecture Decision Records
 - [`auth-flow.md`](./auth-flow.md) — Аутентификация и авторизация, политики, известные баги
+- [`deployment.md`](./deployment.md) — Развёртывание: Docker, Kubernetes, env vars, secrets
 - [`TODO.md`](./TODO.md) — Все незавершённые задачи
 
 ---
@@ -298,3 +299,15 @@ backend/
 | Безопасность        | Добавлена строка про Metadata API                                             |
 | Среды               | Добавлена строка про ApiMetadata                                              |
 | Раздел Metadata API | Новый раздел                                                                  |
+
+---
+
+## Что изменилось в v1.3.0
+
+| Элемент             | Изменение                                                                     |
+| ------------------- | ----------------------------------------------------------------------------- |
+| Версия документа    | 1.2.0 → 1.3.0                                                                 |
+| Структура проекта   | Добавлен `appsettings.Production.json`                                        |
+| DI Container        | Исправлено дублирование: `AddOpenTelemetryOptions` → `AddCustomOpenTelemetry` |
+| DI Container        | Перенумерованы пункты (18 → 17)                                               |
+| Связанные документы | Добавлены `auth-flow.md`, `deployment.md`                                     |
